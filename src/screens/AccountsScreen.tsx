@@ -12,7 +12,7 @@ import { SectionHeader } from '../components/SectionHeader';
 import { RootStackParamList } from '../navigation/types';
 import { useFinanceStore } from '../store/financeStore';
 import { colors, spacing, typography } from '../theme';
-import { formatCurrency } from '../utils/format';
+import { formatCurrency, safeRatio } from '../utils/format';
 
 export function AccountsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -23,7 +23,7 @@ export function AccountsScreen() {
     <ScreenContainer>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
+          <Pressable onPress={() => navigation.goBack()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Voltar">
             {({ pressed }) => (
               <Feather name="chevron-left" size={22} color={colors.textPrimary} style={{ opacity: pressed ? 0.5 : 1 }} />
             )}
@@ -58,7 +58,7 @@ export function AccountsScreen() {
         <View style={{ marginTop: spacing.xl }}>
           <SectionHeader title="Metas" />
           {goals.map((goal, idx) => {
-            const pct = goal.saved / goal.target;
+            const pct = safeRatio(goal.saved, goal.target);
             return (
               <FadeIn key={goal.id} delay={idx * 60}>
                 <Card style={styles.goalCard}>

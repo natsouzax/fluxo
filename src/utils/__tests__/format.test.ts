@@ -1,4 +1,4 @@
-import { formatCurrency, initials } from '../format';
+import { formatCurrency, initials, safeRatio } from '../format';
 
 // pt-BR currency output separates the symbol with a non-breaking space, and the
 // exact codepoint varies by ICU version — compare on normalised whitespace.
@@ -15,6 +15,37 @@ describe('formatCurrency', () => {
 
   it('honours a non-default currency', () => {
     expect(normalize(formatCurrency(10, 'USD'))).toContain('10,00');
+  });
+});
+
+describe('safeRatio', () => {
+  it('returns the plain ratio for a normal goal', () => {
+    expect(safeRatio(50, 200)).toBe(0.25);
+  });
+
+  it('returns 0 instead of Infinity when the target is 0', () => {
+    expect(safeRatio(100, 0)).toBe(0);
+  });
+
+  it('returns 0 instead of NaN when both values are 0', () => {
+    expect(safeRatio(0, 0)).toBe(0);
+  });
+
+  it('returns 0 for a negative target', () => {
+    expect(safeRatio(10, -5)).toBe(0);
+  });
+
+  it('clamps a negative numerator to 0', () => {
+    expect(safeRatio(-10, 100)).toBe(0);
+  });
+
+  it('allows ratios above 1 so overspending stays visible', () => {
+    expect(safeRatio(150, 100)).toBe(1.5);
+  });
+
+  it('returns 0 for non-finite input', () => {
+    expect(safeRatio(NaN, 100)).toBe(0);
+    expect(safeRatio(100, Infinity)).toBe(0);
   });
 });
 
