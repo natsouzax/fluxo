@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { RootStackParamList } from '../navigation/types';
@@ -20,17 +20,24 @@ export function NoteEditorScreen() {
   const [body, setBody] = useState(existing?.body ?? '');
   const [tagsInput, setTagsInput] = useState(existing?.tags.join(', ') ?? '');
 
-  function handleSave() {
-    if (!title.trim() && !body.trim()) {
-      navigation.goBack();
-      return;
-    }
+  // The editor auto-saves on exit. Android's hardware back button and the swipe
+  // gesture never reach an onPress handler, so saving has to happen on unmount
+  // or the note is silently lost. Refs keep the latest draft visible to the
+  // cleanup closure, which only runs once.
+  const draft = useRef({ title, body, tagsInput });
+  draft.current = { title, body, tagsInput };
+  const discarded = useRef(false);
+
+  const save = useCallback(() => {
+    const current = draft.current;
+    if (!current.title.trim() && !current.body.trim()) return;
+
     const now = new Date().toISOString();
     upsertNote({
       id: existing?.id ?? `note-${Date.now()}`,
-      title: title.trim() || 'Sem título',
-      body,
-      tags: tagsInput
+      title: current.title.trim() || 'Sem título',
+      body: current.body,
+      tags: current.tagsInput
         .split(',')
         .map((t) => t.trim())
         .filter(Boolean),
@@ -38,28 +45,51 @@ export function NoteEditorScreen() {
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
     });
-    navigation.goBack();
-  }
+  }, [existing, upsertNote]);
+
+  const saveRef = useRef(save);
+  saveRef.current = save;
+
+  useEffect(
+    () => () => {
+      if (!discarded.current) saveRef.current();
+    },
+    []
+  );
 
   function handleDelete() {
     if (!existing) return;
     Alert.alert('Excluir nota', 'Tem certeza que deseja excluir esta nota?', [
       { text: 'Cancelar', style: 'cancel' },
-      { text: 'Excluir', style: 'destructive', onPress: () => { deleteNote(existing.id); navigation.goBack(); } },
+      {
+        text: 'Excluir',
+        style: 'destructive',
+        onPress: () => {
+          // Stop the unmount handler from re-creating the note we just deleted.
+          discarded.current = true;
+          deleteNote(existing.id);
+          navigation.goBack();
+        },
+      },
     ]);
   }
 
   return (
     <ScreenContainer>
       <View style={styles.header}>
-        <Pressable onPress={handleSave} hitSlop={12}>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Salvar e voltar"
+        >
           {({ pressed }) => (
             <Feather name="chevron-left" size={22} color={colors.textPrimary} style={{ opacity: pressed ? 0.5 : 1 }} />
           )}
         </Pressable>
         <Text style={styles.headerTitle}>{existing ? 'Editar nota' : 'Nova nota'}</Text>
         {existing ? (
-          <Pressable onPress={handleDelete} hitSlop={12}>
+          <Pressable onPress={handleDelete} hitSlop={12} accessibilityRole="button" accessibilityLabel="Excluir nota">
             {({ pressed }) => (
               <Feather name="trash-2" size={20} color={colors.danger} style={{ opacity: pressed ? 0.5 : 1 }} />
             )}

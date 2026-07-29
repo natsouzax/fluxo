@@ -155,6 +155,15 @@ Ver [SECURITY.md](SECURITY.md) para o modelo de ameaça completo. Resumo:
   porque a chave é do próprio usuário. Migrar para um backend está no roadmap.
 - Autenticação e dados bancários são mock. Nenhum dado real de ninguém passa por aqui.
 
+## Privacidade
+
+O app **não tem servidor e não coleta nada**. Tudo fica no aparelho (AsyncStorage + Keystore). O
+único dado que sai do dispositivo é a pergunta enviada à API da Anthropic — e só se o usuário
+configurar a própria chave. Política completa em [PRIVACY.md](PRIVACY.md).
+
+Para a **Data Safety** da Play Store, isso corresponde a: nenhum dado coletado, nenhum dado
+compartilhado, sem rastreadores, sem anúncios.
+
 ---
 
 ## Roadmap
