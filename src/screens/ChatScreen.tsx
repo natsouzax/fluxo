@@ -4,14 +4,16 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { AnimatedPressable } from '../components/AnimatedPressable';
 import { ChatBubble } from '../components/ChatBubble';
+import { MenuButton } from '../components/MenuButton';
 import { ScreenContainer } from '../components/ScreenContainer';
+import { TypingIndicator } from '../components/TypingIndicator';
 import { askFluxoAI, offlineFallbackReply } from '../services/aiService';
 import { useChatStore } from '../store/chatStore';
 import { useFinanceStore } from '../store/financeStore';
@@ -24,6 +26,14 @@ const suggestions = [
   'Como está minha reserva de emergência?',
   'Onde posso cortar gastos?',
 ];
+
+// Date.now() alone collides when a reply lands in the same millisecond as the
+// message that triggered it, which duplicates FlatList keys.
+let messageCounter = 0;
+function newMessageId(prefix: string): string {
+  messageCounter += 1;
+  return `${prefix}-${Date.now()}-${messageCounter}`;
+}
 
 export function ChatScreen() {
   const [input, setInput] = useState('');
@@ -45,7 +55,7 @@ export function ChatScreen() {
     if (!trimmed || isSending) return;
 
     const userMessage = {
-      id: `u-${Date.now()}`,
+      id: newMessageId('u'),
       role: 'user' as const,
       content: trimmed,
       createdAt: new Date().toISOString(),
@@ -54,41 +64,41 @@ export function ChatScreen() {
     setInput('');
     setSending(true);
 
+    const snapshot = { accounts, transactions, budgets, goals, notes };
+    let reply: string;
     try {
-      let reply: string;
       if (apiKey) {
         reply = await askFluxoAI({
           apiKey,
           history: [...messages, userMessage].map((m) => ({ role: m.role, content: m.content })),
-          snapshot: { accounts, transactions, budgets, goals, notes },
+          snapshot,
         });
       } else {
         await new Promise((r) => setTimeout(r, 400));
-        reply = offlineFallbackReply(trimmed, { accounts, transactions, budgets, goals, notes });
+        reply = offlineFallbackReply(trimmed, snapshot);
       }
-      addMessage({
-        id: `a-${Date.now()}`,
-        role: 'assistant',
-        content: reply,
-        createdAt: new Date().toISOString(),
-      });
     } catch (err) {
-      addMessage({
-        id: `a-${Date.now()}`,
-        role: 'assistant',
-        content: `Não consegui falar com a IA agora. ${err instanceof Error ? err.message : ''}`.trim(),
-        createdAt: new Date().toISOString(),
-      });
-    } finally {
-      setSending(false);
-      requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
+      // askFluxoAI already converts API/network failures into user-safe text.
+      reply = err instanceof Error ? err.message : 'Não consegui falar com a IA agora.';
     }
+
+    addMessage({
+      id: newMessageId('a'),
+      role: 'assistant',
+      content: reply,
+      createdAt: new Date().toISOString(),
+    });
+    setSending(false);
+    requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
   }
 
   return (
     <ScreenContainer padded={false}>
       <View style={styles.header}>
-        <Text style={styles.title}>Copiloto financeiro</Text>
+        <View style={styles.headerRow}>
+          <MenuButton />
+          <Text style={styles.title}>Copiloto financeiro</Text>
+        </View>
         {!apiKey && <Text style={styles.subtitle}>Modo offline · configure sua chave em Ajustes</Text>}
       </View>
 
@@ -104,14 +114,15 @@ export function ChatScreen() {
           renderItem={({ item }) => <ChatBubble message={item} />}
           contentContainerStyle={styles.list}
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
+          ListFooterComponent={isSending ? <TypingIndicator /> : null}
         />
 
         {messages.length <= 1 && (
           <View style={styles.suggestions}>
             {suggestions.map((s) => (
-              <Pressable key={s} style={styles.suggestionChip} onPress={() => handleSend(s)}>
+              <AnimatedPressable key={s} style={styles.suggestionChip} onPress={() => handleSend(s)}>
                 <Text style={styles.suggestionText}>{s}</Text>
-              </Pressable>
+              </AnimatedPressable>
             ))}
           </View>
         )}
@@ -125,13 +136,15 @@ export function ChatScreen() {
             style={styles.input}
             multiline
           />
-          <Pressable
+          <AnimatedPressable
             style={[styles.sendBtn, (!input.trim() || isSending) && styles.sendBtnDisabled]}
             onPress={() => handleSend(input)}
             disabled={!input.trim() || isSending}
+            accessibilityLabel="Enviar mensagem"
+            accessibilityState={{ disabled: !input.trim() || isSending }}
           >
             <Feather name="arrow-up" size={18} color={colors.accentText} />
-          </Pressable>
+          </AnimatedPressable>
         </View>
       </KeyboardAvoidingView>
     </ScreenContainer>
@@ -140,6 +153,7 @@ export function ChatScreen() {
 
 const styles = StyleSheet.create({
   header: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.md },
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   title: { ...typography.h1, color: colors.textPrimary },
   subtitle: { ...typography.caption, color: colors.warning, marginTop: spacing.xs },
   list: { paddingTop: spacing.md, paddingBottom: spacing.md },

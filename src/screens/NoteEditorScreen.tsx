@@ -53,12 +53,16 @@ export function NoteEditorScreen() {
     <ScreenContainer>
       <View style={styles.header}>
         <Pressable onPress={handleSave} hitSlop={12}>
-          <Feather name="chevron-left" size={22} color={colors.textPrimary} />
+          {({ pressed }) => (
+            <Feather name="chevron-left" size={22} color={colors.textPrimary} style={{ opacity: pressed ? 0.5 : 1 }} />
+          )}
         </Pressable>
         <Text style={styles.headerTitle}>{existing ? 'Editar nota' : 'Nova nota'}</Text>
         {existing ? (
           <Pressable onPress={handleDelete} hitSlop={12}>
-            <Feather name="trash-2" size={20} color={colors.danger} />
+            {({ pressed }) => (
+              <Feather name="trash-2" size={20} color={colors.danger} style={{ opacity: pressed ? 0.5 : 1 }} />
+            )}
           </Pressable>
         ) : (
           <View style={{ width: 20 }} />

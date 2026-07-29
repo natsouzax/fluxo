@@ -1,42 +1,44 @@
-// Palette inspired by the Revolut and Wise UI kits: near-black surfaces,
-// a single confident accent, and calm greys for secondary text.
+// Palette pulled from the Revolut FREE UI Kit (Figma, community) blended with
+// Wise's clean, high-contrast style: light surfaces, confident blue accent,
+// and a bright teal-green for money-in / success states.
 export const colors = {
-  bg: '#0B0D10',
-  bgElevated: '#15181D',
-  card: '#1B1F26',
-  cardAlt: '#20242C',
-  border: '#2A2F38',
+  bg: '#F5F6F8',
+  bgElevated: '#FFFFFF',
+  card: '#FFFFFF',
+  cardAlt: '#F0F2F5',
+  border: '#E5E8EC',
 
-  textPrimary: '#F5F7FA',
-  textSecondary: '#9AA3AF',
-  textMuted: '#5F6773',
+  textPrimary: '#191C1F',
+  textSecondary: '#75808A',
+  textMuted: '#A6AEB6',
 
-  accent: '#B4FF39', // Revolut-style lime
-  accentSoft: '#26301A',
-  accentText: '#0B0D10',
+  accent: '#0666EB', // Revolut blue
+  accentSoft: '#E6F0FD',
+  accentText: '#FFFFFF',
 
-  wise: '#9FE870', // Wise green, used for money-in / success states
-  wiseSoft: '#1B2A17',
+  wise: '#00BE90', // Wise green, used for money-in / success states
+  wiseSoft: '#E1F8F0',
 
-  danger: '#FF6B6B',
-  dangerSoft: '#2E1A1B',
-  warning: '#FFC24B',
-  warningSoft: '#2E2717',
+  danger: '#EF4444',
+  dangerSoft: '#FDEAEA',
+  warning: '#EC7E00',
+  warningSoft: '#FDF0DF',
 
-  info: '#5FA8FF',
-  infoSoft: '#182634',
+  info: '#0B84FF',
+  infoSoft: '#E6F0FD',
 
-  gradientStart: '#B4FF39',
-  gradientEnd: '#5FE0C0',
+  gradientStart: '#6D4AEF',
+  gradientMid: '#3D5CF5',
+  gradientEnd: '#0666EB',
 
   categoryPalette: [
-    '#B4FF39',
-    '#5FA8FF',
-    '#FF9F6B',
-    '#C792FF',
-    '#5FE0C0',
-    '#FF6BA8',
-    '#FFC24B',
+    '#0666EB',
+    '#4F56F1',
+    '#EC7E00',
+    '#E950A4',
+    '#00BE90',
+    '#F5A623',
+    '#75808A',
   ],
 };
 

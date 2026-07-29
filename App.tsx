@@ -6,7 +6,9 @@ import { RootNavigator } from './src/navigation/RootNavigator';
 export default function App() {
   return (
     <SafeAreaProvider>
-      <StatusBar style="light" />
+      {/* The theme is light (colors.bg #F5F6F8), so the status bar needs dark
+          icons to stay legible. */}
+      <StatusBar style="dark" />
       <RootNavigator />
     </SafeAreaProvider>
   );

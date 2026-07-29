@@ -1,19 +1,25 @@
 import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React from 'react';
-import { Dimensions, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useMemo } from 'react';
+import { Dimensions, FlatList, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { PieChart } from 'react-native-chart-kit';
+import { AnimatedAmount } from '../components/AnimatedAmount';
+import { AnimatedPressable } from '../components/AnimatedPressable';
 import { BalanceCard } from '../components/BalanceCard';
 import { Card } from '../components/Card';
+import { FadeIn } from '../components/FadeIn';
+import { MenuButton } from '../components/MenuButton';
 import { ProgressBar } from '../components/ProgressBar';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { SectionHeader } from '../components/SectionHeader';
 import { TransactionRow } from '../components/TransactionRow';
 import { spendingByCategory, totalBalance } from '../data/mockFinance';
+import { useAnimatedPieValues } from '../hooks/useAnimatedPieValues';
 import { RootStackParamList } from '../navigation/types';
 import { useFinanceStore } from '../store/financeStore';
-import { colors, spacing, typography } from '../theme';
+import { colors, radius, spacing, typography } from '../theme';
 import { formatCurrency } from '../utils/format';
 
 const screenWidth = Dimensions.get('window').width;
@@ -25,9 +31,12 @@ export function HomeScreen() {
   const budgets = useFinanceStore((s) => s.budgets);
 
   const balance = totalBalance(accounts);
-  const spending = spendingByCategory(transactions).slice(0, 5);
+  const spending = useMemo(() => spendingByCategory(transactions).slice(0, 5), [transactions]);
+  const spentThisMonth = budgets.reduce((sum, b) => sum + b.spent, 0);
+  const budgetLimit = budgets.reduce((sum, b) => sum + b.limit, 0);
 
-  const pieData = spending.map((s) => ({
+  const animatedSpending = useAnimatedPieValues(spending, 800);
+  const pieData = animatedSpending.map((s) => ({
     name: s.category,
     population: s.amount,
     color: s.color,
@@ -36,31 +45,52 @@ export function HomeScreen() {
   }));
 
   return (
-    <ScreenContainer padded={false}>
+    <ScreenContainer padded={false} style={styles.screen}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>Olá 👋</Text>
-            <Text style={styles.totalLabel}>Saldo total</Text>
-            <Text style={styles.totalValue}>{formatCurrency(balance)}</Text>
+        <LinearGradient
+          colors={[colors.gradientStart, colors.gradientMid, colors.gradientEnd]}
+          start={{ x: 0.1, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.hero}
+        >
+          <View style={styles.heroTop}>
+            <View style={styles.heroTopLeft}>
+              <MenuButton variant="light" />
+              <Text style={styles.greeting}>Olá 👋</Text>
+            </View>
+            <AnimatedPressable
+              style={styles.avatarBtn}
+              onPress={() => navigation.navigate('Connections')}
+              accessibilityLabel="Conexões e conta"
+            >
+              <Feather name="user" size={18} color="#FFFFFF" />
+            </AnimatedPressable>
           </View>
-          <Pressable style={styles.avatarBtn} onPress={() => navigation.navigate('Connections')}>
-            <Feather name="user" size={18} color={colors.textPrimary} />
-          </Pressable>
-        </View>
 
-        <View style={styles.quickActions}>
-          <QuickAction
-            icon="message-circle"
-            label="Perguntar à IA"
-            onPress={() => navigation.navigate('Tabs', { screen: 'Chat' })}
-          />
-          <QuickAction icon="pie-chart" label="Contas" onPress={() => navigation.navigate('Accounts')} />
-          <QuickAction icon="link" label="Conectar" onPress={() => navigation.navigate('Connections')} />
-        </View>
+          <View style={styles.heroBalance}>
+            <Text style={styles.totalLabel}>Saldo total</Text>
+            <AnimatedAmount value={balance} format={formatCurrency} duration={1000} style={styles.totalValue} />
+            <AnimatedPressable style={styles.accountsPill} onPress={() => navigation.navigate('Accounts')}>
+              <Text style={styles.accountsPillText}>Contas</Text>
+            </AnimatedPressable>
+          </View>
 
-        <View style={styles.section}>
-          <SectionHeader title="Suas contas" action="Ver todas" onPressAction={() => navigation.navigate('Accounts')} />
+          <View style={styles.quickActions}>
+            <QuickAction
+              icon="message-circle"
+              label="Perguntar à IA"
+              onPress={() => navigation.navigate('Tabs', { screen: 'Chat' })}
+            />
+            <QuickAction icon="pie-chart" label="Contas" onPress={() => navigation.navigate('Accounts')} />
+            <QuickAction icon="link" label="Conectar" onPress={() => navigation.navigate('Connections')} />
+            <QuickAction icon="more-horizontal" label="Mais" onPress={() => navigation.navigate('Tabs', { screen: 'Settings' })} />
+          </View>
+        </LinearGradient>
+
+        <FadeIn delay={80}>
+          <View style={[styles.section, styles.paddedSection]}>
+            <SectionHeader title="Suas contas" action="Ver todas" onPressAction={() => navigation.navigate('Accounts')} />
+          </View>
           <FlatList
             horizontal
             data={accounts}
@@ -68,32 +98,61 @@ export function HomeScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ paddingHorizontal: spacing.lg }}
             renderItem={({ item }) => <BalanceCard account={item} />}
+            style={styles.accountsList}
           />
-        </View>
+        </FadeIn>
 
-        <View style={[styles.section, styles.paddedSection]}>
-          <SectionHeader title="Para onde vai seu dinheiro" />
-          <Card>
-            {pieData.length > 0 ? (
-              <PieChart
-                data={pieData}
-                width={screenWidth - spacing.lg * 4}
-                height={160}
-                accessor="population"
-                backgroundColor="transparent"
-                paddingLeft="0"
-                chartConfig={{
-                  color: () => colors.textPrimary,
-                  labelColor: () => colors.textSecondary,
-                }}
-                hasLegend
+        <FadeIn delay={160}>
+          <View style={[styles.section, styles.paddedSection, styles.widgetsRow]}>
+            <Card style={styles.widget}>
+              <Text style={styles.widgetLabel}>Gasto do mês</Text>
+              <AnimatedAmount value={spentThisMonth} format={formatCurrency} duration={900} style={styles.widgetValue} />
+              <ProgressBar
+                progress={budgetLimit > 0 ? spentThisMonth / budgetLimit : 0}
+                color={spentThisMonth > budgetLimit ? colors.danger : colors.accent}
+                height={6}
               />
-            ) : (
-              <Text style={styles.empty}>Sem gastos registrados ainda.</Text>
-            )}
-          </Card>
-        </View>
+            </Card>
+            <Card style={styles.widget}>
+              <Text style={styles.widgetLabel}>Patrimônio</Text>
+              <AnimatedAmount value={balance} format={formatCurrency} duration={1000} style={styles.widgetValue} />
+              <View style={styles.dotsRow}>
+                {accounts.map((a, idx) => (
+                  <FadeIn key={a.id} delay={200 + idx * 80} distance={0}>
+                    <View style={[styles.accountDot, { backgroundColor: a.color }]} />
+                  </FadeIn>
+                ))}
+              </View>
+            </Card>
+          </View>
+        </FadeIn>
 
+        <FadeIn delay={240}>
+          <View style={[styles.section, styles.paddedSection]}>
+            <SectionHeader title="Para onde vai seu dinheiro" />
+            <Card>
+              {pieData.length > 0 ? (
+                <PieChart
+                  data={pieData}
+                  width={screenWidth - spacing.lg * 4}
+                  height={160}
+                  accessor="population"
+                  backgroundColor="transparent"
+                  paddingLeft="0"
+                  chartConfig={{
+                    color: () => colors.textPrimary,
+                    labelColor: () => colors.textSecondary,
+                  }}
+                  hasLegend
+                />
+              ) : (
+                <Text style={styles.empty}>Sem gastos registrados ainda.</Text>
+              )}
+            </Card>
+          </View>
+        </FadeIn>
+
+        <FadeIn delay={320}>
         <View style={[styles.section, styles.paddedSection]}>
           <SectionHeader title="Orçamentos do mês" />
           <Card>
@@ -102,7 +161,7 @@ export function HomeScreen() {
                 <View style={styles.budgetRow}>
                   <Text style={styles.budgetLabel}>{b.category}</Text>
                   <Text style={styles.budgetValue}>
-                    {formatCurrency(b.spent)} / {formatCurrency(b.limit)}
+                    <AnimatedAmount value={b.spent} format={formatCurrency} duration={800} /> / {formatCurrency(b.limit)}
                   </Text>
                 </View>
                 <ProgressBar
@@ -113,15 +172,18 @@ export function HomeScreen() {
             ))}
           </Card>
         </View>
+        </FadeIn>
 
-        <View style={[styles.section, styles.paddedSection]}>
-          <SectionHeader title="Transações recentes" />
-          <Card>
-            {transactions.slice(0, 5).map((t) => (
-              <TransactionRow key={t.id} transaction={t} />
-            ))}
-          </Card>
-        </View>
+        <FadeIn delay={400}>
+          <View style={[styles.section, styles.paddedSection]}>
+            <SectionHeader title="Transações recentes" />
+            <Card>
+              {transactions.slice(0, 5).map((t) => (
+                <TransactionRow key={t.id} transaction={t} />
+              ))}
+            </Card>
+          </View>
+        </FadeIn>
       </ScrollView>
     </ScreenContainer>
   );
@@ -137,54 +199,72 @@ function QuickAction({
   onPress: () => void;
 }) {
   return (
-    <Pressable style={styles.quickAction} onPress={onPress}>
+    <AnimatedPressable style={styles.quickAction} onPress={onPress}>
       <View style={styles.quickIcon}>
-        <Feather name={icon} size={18} color={colors.accent} />
+        <Feather name={icon} size={18} color="#FFFFFF" />
       </View>
       <Text style={styles.quickLabel}>{label}</Text>
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { backgroundColor: colors.bg },
   scrollContent: { paddingBottom: spacing.xxl },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingHorizontal: spacing.lg,
+  hero: {
     paddingTop: spacing.md,
+    paddingBottom: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    borderBottomLeftRadius: radius.xxl,
+    borderBottomRightRadius: radius.xxl,
+    marginBottom: spacing.xl,
   },
-  greeting: { ...typography.body, color: colors.textSecondary },
-  totalLabel: { ...typography.caption, color: colors.textMuted, marginTop: spacing.md },
-  totalValue: { ...typography.display, color: colors.textPrimary },
+  heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  heroTopLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  greeting: { ...typography.body, color: '#FFFFFF', opacity: 0.9 },
   avatarBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.cardAlt,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
+  heroBalance: { alignItems: 'center', marginTop: spacing.xl },
+  totalLabel: { ...typography.bodyStrong, color: 'rgba(255,255,255,0.85)' },
+  totalValue: { ...typography.display, color: '#FFFFFF', marginTop: spacing.xs },
+  accountsPill: {
+    marginTop: spacing.md,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+  },
+  accountsPillText: { ...typography.bodyStrong, color: '#FFFFFF' },
   quickActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
     marginTop: spacing.xl,
-    marginBottom: spacing.xl,
   },
   quickAction: { alignItems: 'center', gap: spacing.xs, flex: 1 },
   quickIcon: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: colors.accentSoft,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  quickLabel: { ...typography.tiny, color: colors.textSecondary, textAlign: 'center' },
-  section: { marginBottom: spacing.xl },
+  quickLabel: { ...typography.tiny, color: 'rgba(255,255,255,0.9)', textAlign: 'center' },
+  section: { marginBottom: spacing.md },
   paddedSection: { paddingHorizontal: spacing.lg },
+  accountsList: { marginBottom: spacing.xl },
+  widgetsRow: { flexDirection: 'row', gap: spacing.md, marginBottom: spacing.xl },
+  widget: { flex: 1 },
+  widgetLabel: { ...typography.caption, color: colors.textSecondary, marginBottom: spacing.xs },
+  widgetValue: { ...typography.h1, color: colors.textPrimary, marginBottom: spacing.md },
+  dotsRow: { flexDirection: 'row', gap: spacing.xs },
+  accountDot: { width: 20, height: 20, borderRadius: 10 },
   budgetRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.xs },
   budgetLabel: { ...typography.body, color: colors.textPrimary },
   budgetValue: { ...typography.caption, color: colors.textSecondary },

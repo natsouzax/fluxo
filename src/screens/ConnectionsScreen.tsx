@@ -4,6 +4,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Card } from '../components/Card';
+import { FadeIn } from '../components/FadeIn';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { SectionHeader } from '../components/SectionHeader';
@@ -77,8 +78,10 @@ export function ConnectionsScreen() {
   return (
     <ScreenContainer>
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
-          <Feather name="chevron-left" size={22} color={colors.textPrimary} />
+        <Pressable onPress={() => navigation.goBack()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Voltar">
+          {({ pressed }) => (
+            <Feather name="chevron-left" size={22} color={colors.textPrimary} style={{ opacity: pressed ? 0.5 : 1 }} />
+          )}
         </Pressable>
         <Text style={styles.title}>Conexões</Text>
         <View style={{ width: 22 }} />
@@ -86,47 +89,51 @@ export function ConnectionsScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <SectionHeader title="Banco (Open Finance)" />
-        <Card style={styles.card}>
-          <View style={styles.rowBetween}>
-            <View style={styles.rowInfo}>
-              <Feather name="credit-card" size={18} color={colors.textSecondary} />
-              <Text style={styles.rowLabel}>{openFinanceConnection.providerLabel ?? 'Nenhum banco conectado'}</Text>
+        <FadeIn>
+          <Card style={styles.card}>
+            <View style={styles.rowBetween}>
+              <View style={styles.rowInfo}>
+                <Feather name="credit-card" size={18} color={colors.textSecondary} />
+                <Text style={styles.rowLabel}>{openFinanceConnection.providerLabel ?? 'Nenhum banco conectado'}</Text>
+              </View>
+              <StatusPill connected={openFinanceConnection.connected} label={openFinanceConnection.connected ? 'Conectado' : 'Desconectado'} />
             </View>
-            <StatusPill connected={openFinanceConnection.connected} label={openFinanceConnection.connected ? 'Conectado' : 'Desconectado'} />
-          </View>
-          <Text style={styles.helper}>
-            Hoje conecta contas de exemplo. Integração real via Pluggy/Belvo exige backend próprio
-            (client secret não pode ficar no app) — detalhes em README.
-          </Text>
-          <PrimaryButton
-            label={openFinanceConnection.connected ? 'Reconectar' : 'Conectar banco (exemplo)'}
-            onPress={handleConnectBank}
-            loading={connectingBank}
-            variant="secondary"
-          />
-        </Card>
+            <Text style={styles.helper}>
+              Hoje conecta contas de exemplo. Integração real via Pluggy/Belvo exige backend próprio
+              (client secret não pode ficar no app) — detalhes em README.
+            </Text>
+            <PrimaryButton
+              label={openFinanceConnection.connected ? 'Reconectar' : 'Conectar banco (exemplo)'}
+              onPress={handleConnectBank}
+              loading={connectingBank}
+              variant="secondary"
+            />
+          </Card>
+        </FadeIn>
 
         <SectionHeader title="Google (Calendar, Gmail, Drive)" />
-        <Card style={styles.card}>
-          <View style={styles.rowBetween}>
-            <View style={styles.rowInfo}>
-              <Feather name="mail" size={18} color={colors.textSecondary} />
-              <Text style={styles.rowLabel}>Conta Google</Text>
+        <FadeIn delay={80}>
+          <Card style={styles.card}>
+            <View style={styles.rowBetween}>
+              <View style={styles.rowInfo}>
+                <Feather name="mail" size={18} color={colors.textSecondary} />
+                <Text style={styles.rowLabel}>Conta Google</Text>
+              </View>
+              <StatusPill connected={googleConnection.connected} label={googleConnection.connected ? 'Conectado' : 'Desconectado'} />
             </View>
-            <StatusPill connected={googleConnection.connected} label={googleConnection.connected ? 'Conectado' : 'Desconectado'} />
-          </View>
-          <Text style={styles.helper}>
-            Traz sua agenda para a aba Rotina e permite que a IA cruze compromissos com contas a
-            pagar. Requer um OAuth Client ID configurado pelo dono do app (ver README).
-          </Text>
-          <PrimaryButton
-            label={hasGoogleClientId() ? 'Conectar com Google' : 'Configurar Client ID (ver README)'}
-            onPress={handleConnectGoogle}
-            loading={connectingGoogle}
-            variant="secondary"
-            disabled={!request}
-          />
-        </Card>
+            <Text style={styles.helper}>
+              Traz sua agenda para a aba Rotina e permite que a IA cruze compromissos com contas a
+              pagar. Requer um OAuth Client ID configurado pelo dono do app (ver README).
+            </Text>
+            <PrimaryButton
+              label={hasGoogleClientId() ? 'Conectar com Google' : 'Configurar Client ID (ver README)'}
+              onPress={handleConnectGoogle}
+              loading={connectingGoogle}
+              variant="secondary"
+              disabled={!request}
+            />
+          </Card>
+        </FadeIn>
       </ScrollView>
     </ScreenContainer>
   );

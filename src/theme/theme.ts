@@ -14,11 +14,12 @@ export const radius = {
   md: 14,
   lg: 20,
   xl: 28,
+  xxl: 36,
   pill: 999,
 };
 
 export const typography = {
-  display: { fontSize: 34, fontWeight: '700' as const, letterSpacing: -0.5 },
+  display: { fontSize: 40, fontWeight: '600' as const, letterSpacing: -0.8 },
   h1: { fontSize: 24, fontWeight: '700' as const, letterSpacing: -0.3 },
   h2: { fontSize: 18, fontWeight: '600' as const },
   body: { fontSize: 15, fontWeight: '400' as const },

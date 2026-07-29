@@ -1,8 +1,10 @@
 import { Feather } from '@expo/vector-icons';
 import React, { useMemo } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { Card } from '../components/Card';
 import { EventRow } from '../components/EventRow';
+import { FadeIn } from '../components/FadeIn';
+import { MenuButton } from '../components/MenuButton';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { hasGoogleClientId } from '../services/googleAuth';
 import { useAgendaStore } from '../store/agendaStore';
@@ -21,28 +23,39 @@ export function AgendaScreen() {
   return (
     <ScreenContainer>
       <View style={styles.header}>
-        <Text style={styles.title}>Rotina</Text>
-        <Text style={styles.date}>
-          {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
-        </Text>
+        <View style={styles.headerRow}>
+          <MenuButton />
+          <View>
+            <Text style={styles.title}>Rotina</Text>
+            <Text style={styles.date}>
+              {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
+            </Text>
+          </View>
+        </View>
       </View>
 
       {!googleConnection.connected && (
-        <Card style={styles.banner}>
-          <Feather name="calendar" size={18} color={colors.info} />
-          <Text style={styles.bannerText}>
-            {hasGoogleClientId()
-              ? 'Conecte sua conta Google em Ajustes para ver sua agenda real aqui.'
-              : 'Integração com Google Calendar em breve — hoje a agenda usa eventos locais e lembretes financeiros.'}
-          </Text>
-        </Card>
+        <FadeIn>
+          <Card style={styles.banner}>
+            <Feather name="calendar" size={18} color={colors.info} />
+            <Text style={styles.bannerText}>
+              {hasGoogleClientId()
+                ? 'Conecte sua conta Google em Ajustes para ver sua agenda real aqui.'
+                : 'Integração com Google Calendar em breve — hoje a agenda usa eventos locais e lembretes financeiros.'}
+            </Text>
+          </Card>
+        </FadeIn>
       )}
 
       <FlatList
         data={sorted}
         keyExtractor={(e) => e.id}
         contentContainerStyle={{ paddingTop: spacing.lg, paddingBottom: spacing.xxl }}
-        renderItem={({ item }) => <EventRow event={item} />}
+        renderItem={({ item, index }) => (
+          <FadeIn delay={index * 50}>
+            <EventRow event={item} />
+          </FadeIn>
+        )}
         ListEmptyComponent={<Text style={styles.empty}>Nada por aqui hoje.</Text>}
       />
     </ScreenContainer>
@@ -51,6 +64,7 @@ export function AgendaScreen() {
 
 const styles = StyleSheet.create({
   header: { marginTop: spacing.md },
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   title: { ...typography.h1, color: colors.textPrimary },
   date: { ...typography.caption, color: colors.textSecondary, marginTop: spacing.xs, textTransform: 'capitalize' },
   banner: {

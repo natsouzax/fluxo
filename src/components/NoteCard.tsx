@@ -1,11 +1,12 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Note } from '../data/types';
 import { colors, radius, spacing, typography } from '../theme';
+import { AnimatedPressable } from './AnimatedPressable';
 
 export function NoteCard({ note, onPress }: { note: Note; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
+    <AnimatedPressable onPress={onPress} scaleTo={0.97} style={styles.card}>
       <Text style={styles.title} numberOfLines={1}>
         {note.title || 'Sem título'}
       </Text>
@@ -21,7 +22,7 @@ export function NoteCard({ note, onPress }: { note: Note; onPress: () => void })
           ))}
         </View>
       )}
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
@@ -29,12 +30,14 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.card,
     borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
     padding: spacing.lg,
     marginBottom: spacing.md,
+    shadowColor: '#101418',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 1,
   },
-  pressed: { opacity: 0.8 },
   title: { ...typography.bodyStrong, color: colors.textPrimary, marginBottom: spacing.xs },
   body: { ...typography.caption, color: colors.textSecondary, lineHeight: 18 },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginTop: spacing.sm },

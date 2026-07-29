@@ -33,7 +33,10 @@ export function getGoogleClientId(): string | undefined {
   // in environments (like Jest) where expo-constants isn't mocked.
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const Constants = require('expo-constants').default;
-  return Constants.expoConfig?.extra?.googleOAuthClientId;
+  const configured = Constants.expoConfig?.extra?.googleOAuthClientId;
+  // Must be a non-empty string: a placeholder like `{}` or `""` in app.json is
+  // truthy/defined but would send a malformed client_id to Google.
+  return typeof configured === 'string' && configured.trim() ? configured.trim() : undefined;
 }
 
 export function hasGoogleClientId(): boolean {

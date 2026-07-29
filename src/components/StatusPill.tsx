@@ -1,18 +1,21 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { colors, radius, spacing, typography } from '../theme';
+import { FadeIn } from './FadeIn';
 
 export function StatusPill({ connected, label }: { connected: boolean; label: string }) {
   return (
-    <View
-      style={[
-        styles.pill,
-        { backgroundColor: connected ? colors.wiseSoft : colors.cardAlt },
-      ]}
-    >
-      <View style={[styles.dot, { backgroundColor: connected ? colors.wise : colors.textMuted }]} />
-      <Text style={[styles.text, { color: connected ? colors.wise : colors.textSecondary }]}>{label}</Text>
-    </View>
+    <FadeIn key={connected ? 'on' : 'off'} duration={250} distance={0}>
+      <View
+        style={[
+          styles.pill,
+          { backgroundColor: connected ? colors.wiseSoft : colors.cardAlt },
+        ]}
+      >
+        <View style={[styles.dot, { backgroundColor: connected ? colors.wise : colors.textMuted }]} />
+        <Text style={[styles.text, { color: connected ? colors.wise : colors.textSecondary }]}>{label}</Text>
+      </View>
+    </FadeIn>
   );
 }
 

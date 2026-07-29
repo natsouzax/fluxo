@@ -2,15 +2,18 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { ChatMessage } from '../data/types';
 import { colors, radius, spacing, typography } from '../theme';
+import { FadeIn } from './FadeIn';
 
 export function ChatBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === 'user';
   return (
-    <View style={[styles.row, isUser && styles.rowUser]}>
-      <View style={[styles.bubble, isUser ? styles.bubbleUser : styles.bubbleAssistant]}>
-        <Text style={[styles.text, isUser && styles.textUser]}>{message.content}</Text>
+    <FadeIn duration={280} distance={10}>
+      <View style={[styles.row, isUser && styles.rowUser]}>
+        <View style={[styles.bubble, isUser ? styles.bubbleUser : styles.bubbleAssistant]}>
+          <Text style={[styles.text, isUser && styles.textUser]}>{message.content}</Text>
+        </View>
       </View>
-    </View>
+    </FadeIn>
   );
 }
 

@@ -6,15 +6,15 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
-    "backgroundColor": "#0B0D10",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#F5F6F8",
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "package": "com.fluxo.app",
       "adaptiveIcon": {
-        "backgroundColor": "#0B0D10",
+        "backgroundColor": "#F5F6F8",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -31,7 +31,11 @@
       "expo-font"
     ],
     "extra": {
-      "googleOAuthClientId": null
-    }
+      "googleOAuthClientId": null,
+      "eas": {
+        "projectId": "092282ae-0fa1-4a67-b502-09656bbbe295"
+      }
+    },
+    "owner": "natsouzax"
   }
 }

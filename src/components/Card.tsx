@@ -19,10 +19,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: radius.lg,
     padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
+    shadowColor: '#101418',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 2,
   },
   elevated: {
     backgroundColor: colors.cardAlt,
+    shadowOpacity: 0,
+    elevation: 0,
   },
 });

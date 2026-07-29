@@ -3,7 +3,9 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AnimatedAmount } from '../components/AnimatedAmount';
 import { Card } from '../components/Card';
+import { FadeIn } from '../components/FadeIn';
 import { ProgressBar } from '../components/ProgressBar';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { SectionHeader } from '../components/SectionHeader';
@@ -22,47 +24,55 @@ export function AccountsScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
-            <Feather name="chevron-left" size={22} color={colors.textPrimary} />
+            {({ pressed }) => (
+              <Feather name="chevron-left" size={22} color={colors.textPrimary} style={{ opacity: pressed ? 0.5 : 1 }} />
+            )}
           </Pressable>
           <Text style={styles.title}>Contas e metas</Text>
           <View style={{ width: 22 }} />
         </View>
 
         <SectionHeader title="Contas conectadas" action="Conectar" onPressAction={() => navigation.navigate('Connections')} />
-        {accounts.map((account) => (
-          <Card key={account.id} style={styles.accountCard}>
-            <View style={styles.accountRow}>
-              <View style={[styles.dot, { backgroundColor: account.color }]} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.accountName}>{account.nickname}</Text>
-                <Text style={styles.accountInstitution}>{account.institution}</Text>
+        {accounts.map((account, idx) => (
+          <FadeIn key={account.id} delay={idx * 60}>
+            <Card style={styles.accountCard}>
+              <View style={styles.accountRow}>
+                <View style={[styles.dot, { backgroundColor: account.color }]} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.accountName}>{account.nickname}</Text>
+                  <Text style={styles.accountInstitution}>{account.institution}</Text>
+                </View>
+                <AnimatedAmount
+                  value={account.balance}
+                  format={(n) => formatCurrency(n, account.currency)}
+                  style={[styles.accountBalance, account.balance < 0 && styles.negative]}
+                />
               </View>
-              <Text style={[styles.accountBalance, account.balance < 0 && styles.negative]}>
-                {formatCurrency(account.balance, account.currency)}
-              </Text>
-            </View>
-            {account.isMock && (
-              <Text style={styles.mockTag}>Dado de exemplo — conecte seu banco em Ajustes</Text>
-            )}
-          </Card>
+              {account.isMock && (
+                <Text style={styles.mockTag}>Dado de exemplo — conecte seu banco em Ajustes</Text>
+              )}
+            </Card>
+          </FadeIn>
         ))}
 
         <View style={{ marginTop: spacing.xl }}>
           <SectionHeader title="Metas" />
-          {goals.map((goal) => {
+          {goals.map((goal, idx) => {
             const pct = goal.saved / goal.target;
             return (
-              <Card key={goal.id} style={styles.goalCard}>
-                <View style={styles.goalRow}>
-                  <Text style={styles.goalTitle}>{goal.title}</Text>
-                  <Text style={styles.goalPct}>{Math.round(pct * 100)}%</Text>
-                </View>
-                <ProgressBar progress={pct} color={colors.wise} />
-                <Text style={styles.goalValues}>
-                  {formatCurrency(goal.saved)} de {formatCurrency(goal.target)}
-                  {goal.deadline ? ` · até ${new Date(goal.deadline).toLocaleDateString('pt-BR')}` : ''}
-                </Text>
-              </Card>
+              <FadeIn key={goal.id} delay={idx * 60}>
+                <Card style={styles.goalCard}>
+                  <View style={styles.goalRow}>
+                    <Text style={styles.goalTitle}>{goal.title}</Text>
+                    <AnimatedAmount value={pct * 100} format={(n) => `${Math.round(n)}%`} style={styles.goalPct} />
+                  </View>
+                  <ProgressBar progress={pct} color={colors.wise} />
+                  <Text style={styles.goalValues}>
+                    <AnimatedAmount value={goal.saved} format={(n) => formatCurrency(n)} /> de {formatCurrency(goal.target)}
+                    {goal.deadline ? ` · até ${new Date(goal.deadline).toLocaleDateString('pt-BR')}` : ''}
+                  </Text>
+                </Card>
+              </FadeIn>
             );
           })}
         </View>

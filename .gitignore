@@ -13,6 +13,7 @@ expo-env.d.ts
 .kotlin/
 *.orig.*
 *.jks
+*.keystore
 *.p8
 *.p12
 *.key
@@ -30,8 +31,22 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# local env files
-.env*.local
+# Secrets and credentials — this repo is public, keep every one of these out.
+# `.env*.local` alone does NOT cover a plain `.env`.
+.env
+.env.*
+!.env.example
+secrets.json
+credentials.json
+# Google OAuth / Firebase service configs (contain client ids and API keys)
+google-services.json
+GoogleService-Info.plist
+# EAS local credential store
+credentials/
+.easignore
+
+# tests
+coverage/
 
 # typescript
 *.tsbuildinfo
