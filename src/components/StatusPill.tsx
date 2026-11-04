@@ -1,12 +1,15 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, radius, spacing, typography } from '../theme';
+import { radius, spacing, typography, useThemeStyles, type AppColors } from '../theme';
 import { FadeIn } from './FadeIn';
 
 export function StatusPill({ connected, label }: { connected: boolean; label: string }) {
+  const { colors, styles } = useThemeStyles(createStyles);
   return (
     <FadeIn key={connected ? 'on' : 'off'} duration={250} distance={0}>
       <View
+        accessible
+        accessibilityLabel={`${label}: ${connected ? 'conectado' : 'desconectado'}`}
         style={[
           styles.pill,
           { backgroundColor: connected ? colors.wiseSoft : colors.cardAlt },
@@ -19,7 +22,7 @@ export function StatusPill({ connected, label }: { connected: boolean; label: st
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   pill: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -6,6 +6,16 @@ export function formatCurrency(value: number, currency: string = 'BRL'): string 
   }).format(value);
 }
 
+export function parseMoney(value: string): number | null {
+  const cleaned = value.trim().replace(/[^\d,.-]/g, '');
+  if (!cleaned) return null;
+  const normalized = cleaned.includes(',')
+    ? cleaned.replace(/\./g, '').replace(',', '.')
+    : cleaned;
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 export function formatCompactNumber(value: number): string {
   return new Intl.NumberFormat('pt-BR', { notation: 'compact' }).format(value);
 }

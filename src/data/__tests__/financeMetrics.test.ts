@@ -1,5 +1,5 @@
 import { Account, Transaction } from '../types';
-import { mockAccounts, mockBudgets, spendingByCategory, totalBalance } from '../mockFinance';
+import { spendingByCategory, totalBalance } from '../financeMetrics';
 
 function account(id: string, balance: number): Account {
   return {
@@ -11,7 +11,6 @@ function account(id: string, balance: number): Account {
     currency: 'BRL',
     color: '#000',
     lastSyncedAt: null,
-    isMock: true,
   };
 }
 
@@ -73,13 +72,3 @@ describe('spendingByCategory', () => {
   });
 });
 
-describe('seed data', () => {
-  it('ships accounts flagged as mock so real ones can replace them', () => {
-    expect(mockAccounts.length).toBeGreaterThan(0);
-    expect(mockAccounts.every((a) => a.isMock)).toBe(true);
-  });
-
-  it('never seeds a budget with a zero limit (would divide by zero)', () => {
-    expect(mockBudgets.every((b) => b.limit > 0)).toBe(true);
-  });
-});

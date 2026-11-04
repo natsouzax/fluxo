@@ -1,9 +1,10 @@
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
+import { AgendaEvent } from '../data/types';
 
 WebBrowser.maybeCompleteAuthSession();
 
-// Google Calendar, Gmail and Drive integration.
+// Google Calendar integration.
 //
 // This is real OAuth wiring, but it needs a Google Cloud OAuth client that
 // only the app owner can create (Google Cloud Console -> APIs & Services ->
@@ -20,12 +21,7 @@ const discovery = {
 };
 
 const SCOPES = [
-  'openid',
-  'email',
-  'profile',
   'https://www.googleapis.com/auth/calendar.readonly',
-  'https://www.googleapis.com/auth/gmail.readonly',
-  'https://www.googleapis.com/auth/drive.readonly',
 ];
 
 export function getGoogleClientId(): string | undefined {
@@ -56,24 +52,50 @@ export function useGoogleAuthRequest() {
   );
 }
 
-export async function fetchUpcomingCalendarEvents(accessToken: string) {
-  const now = new Date().toISOString();
-  const res = await fetch(
-    `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(now)}&maxResults=10&singleEvents=true&orderBy=startTime`,
-    { headers: { Authorization: `Bearer ${accessToken}` } }
-  );
-  if (!res.ok) throw new Error(`Google Calendar error (${res.status})`);
-  const data = await res.json();
-  return data.items ?? [];
+export interface GoogleCalendarEvent {
+  id: string;
+  summary?: string;
+  description?: string;
+  location?: string;
+  htmlLink?: string;
+  status?: string;
+  start?: { dateTime?: string; date?: string };
+  end?: { dateTime?: string; date?: string };
 }
 
-export async function fetchRecentFinanceEmails(accessToken: string) {
-  const query = encodeURIComponent('fatura OR boleto OR pagamento OR recibo');
-  const res = await fetch(
-    `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${query}&maxResults=10`,
-    { headers: { Authorization: `Bearer ${accessToken}` } }
-  );
-  if (!res.ok) throw new Error(`Gmail error (${res.status})`);
-  const data = await res.json();
-  return data.messages ?? [];
+export async function fetchCalendarEvents(accessToken: string, from: Date, until: Date): Promise<GoogleCalendarEvent[]> {
+  const items: GoogleCalendarEvent[] = [];
+  let pageToken: string | undefined;
+  do {
+    const params = new URLSearchParams({
+      timeMin: from.toISOString(), timeMax: until.toISOString(),
+      maxResults: '250', singleEvents: 'true', orderBy: 'startTime',
+    });
+    if (pageToken) params.set('pageToken', pageToken);
+    const res = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?${params}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (res.status === 401) throw new Error('A sessão Google expirou. Reconecte em Ajustes.');
+    if (!res.ok) throw new Error(`Falha ao atualizar Google Calendar (${res.status}).`);
+    const data: { items?: GoogleCalendarEvent[]; nextPageToken?: string } = await res.json();
+    items.push(...(data.items ?? []));
+    pageToken = data.nextPageToken;
+  } while (pageToken);
+  return items.filter((item) => item.status !== 'cancelled' && item.start && item.end);
+}
+
+export function toAgendaEvents(items: GoogleCalendarEvent[]): AgendaEvent[] {
+  return items.flatMap((item) => {
+    const start = item.start?.dateTime ?? item.start?.date;
+    const end = item.end?.dateTime ?? item.end?.date;
+    if (!start || !end) return [];
+    return [{
+      id: `google:${item.id}`,
+      title: item.summary?.trim() || 'Evento sem título',
+      start, end, source: 'google' as const,
+      notes: item.description?.trim(),
+      location: item.location?.trim(),
+      url: item.htmlLink,
+    }];
+  });
 }

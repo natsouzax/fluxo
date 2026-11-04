@@ -1,0 +1,76 @@
+{
+  "status": "approved-green-identity-option-a; light-and-dark-implemented",
+  "selectedBrand": "Identidade verde da proposta 01, selecionada pelo usuÃ¡rio em 2026-10-20",
+  "defaultMode": "light",
+  "userSelectable": [
+    "light",
+    "dark"
+  ],
+  "font": {
+    "family": "Manrope",
+    "file": "../../assets/fonts/Manrope-Variable.ttf",
+    "wordmarkWeight": 800,
+    "wordmarkCase": "uppercase",
+    "nativeFiles": {
+      "regular": "../../assets/fonts/Manrope-Regular.ttf",
+      "medium": "../../assets/fonts/Manrope-Medium.ttf",
+      "semiBold": "../../assets/fonts/Manrope-SemiBold.ttf",
+      "bold": "../../assets/fonts/Manrope-Bold.ttf",
+      "extraBold": "../../assets/fonts/Manrope-ExtraBold.ttf"
+    }
+  },
+  "brand": {
+    "primary": "#163D36",
+    "highlight": "#D5F478",
+    "logo": "assets/fluxo-arch-lockup.svg",
+    "wordmark": "FLUXO",
+    "wordmarkWeight": 800
+  },
+  "light": {
+    "canvas": "#F6F5EF",
+    "surface": "#FFFFFF",
+    "surfaceSoft": "#E7EEDD",
+    "textPrimary": "#163D36",
+    "textSecondary": "#52645D",
+    "textMuted": "#5E6C64",
+    "border": "#DCE3D8",
+    "financeTint": "#E7EEDD",
+    "notesTint": "#EEE8F4",
+    "routineTint": "#F7E9DB",
+    "positive": "#24654D",
+    "negative": "#A83C32",
+    "warning": "#815B14"
+  },
+  "dark": {
+    "canvas": "#101610",
+    "surface": "#18211A",
+    "surfaceSoft": "#202F25",
+    "textPrimary": "#EFF5E9",
+    "textSecondary": "#B2C0B2",
+    "textMuted": "#89998B",
+    "border": "#303A31",
+    "brand": "#D5F478",
+    "financeTint": "#202F25",
+    "notesTint": "#2B2633",
+    "routineTint": "#302A23",
+    "positive": "#A7DE8A",
+    "negative": "#FF9A94",
+    "warning": "#F0C879"
+  },
+  "geometry": {
+    "controlRadiusDp": 14,
+    "cardRadiusDp": 20,
+    "heroRadiusDp": 30,
+    "touchTargetMinDp": 48
+  },
+  "sequence": [
+    "Implement and verify light mode as the first app pass",
+    "Add a persistent explicit Light/Dark selector in Settings",
+    "Apply and verify dark mode consistently across every screen, dialogs and system bars"
+  ],
+  "motion": {
+    "pressMs": 120,
+    "contextMs": 220,
+    "respectReducedMotion": true
+  }
+}

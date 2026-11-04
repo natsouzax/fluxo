@@ -1,39 +1,37 @@
-import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AnimatedAmount } from '../components/AnimatedAmount';
 import { Card } from '../components/Card';
 import { FadeIn } from '../components/FadeIn';
 import { ProgressBar } from '../components/ProgressBar';
+import { DetailHeader } from '../components/DetailHeader';
+import { PrimaryButton } from '../components/PrimaryButton';
 import { ScreenContainer } from '../components/ScreenContainer';
 import { SectionHeader } from '../components/SectionHeader';
 import { RootStackParamList } from '../navigation/types';
 import { useFinanceStore } from '../store/financeStore';
-import { colors, spacing, typography } from '../theme';
+import { spacing, typography, useThemeStyles, type AppColors } from '../theme';
 import { formatCurrency, safeRatio } from '../utils/format';
 
 export function AccountsScreen() {
+  const { colors, styles } = useThemeStyles(createStyles);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const accounts = useFinanceStore((s) => s.accounts);
   const goals = useFinanceStore((s) => s.goals);
 
   return (
-    <ScreenContainer>
+    <ScreenContainer bottomSafeArea>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <Pressable onPress={() => navigation.goBack()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Voltar">
-            {({ pressed }) => (
-              <Feather name="chevron-left" size={22} color={colors.textPrimary} style={{ opacity: pressed ? 0.5 : 1 }} />
-            )}
-          </Pressable>
-          <Text style={styles.title}>Contas e metas</Text>
-          <View style={{ width: 22 }} />
-        </View>
+      <DetailHeader title="Contas e metas" onBack={() => navigation.goBack()} />
 
-        <SectionHeader title="Contas conectadas" action="Conectar" onPressAction={() => navigation.navigate('Connections')} />
-        {accounts.map((account, idx) => (
+        <SectionHeader title="Suas contas" action="+ Adicionar" onPressAction={() => navigation.navigate('AccountEditor')} />
+        {accounts.length === 0 ? <Card style={styles.accountCard}>
+          <Text style={styles.accountName}>Suas contas começam aqui</Text>
+          <Text style={styles.accountInstitution}>Cadastre uma conta manualmente ou conecte uma fonte de dados.</Text>
+          <PrimaryButton label="Adicionar conta" onPress={() => navigation.navigate('AccountEditor')} />
+        </Card> : accounts.map((account, idx) => (
           <FadeIn key={account.id} delay={idx * 60}>
             <Card style={styles.accountCard}>
               <View style={styles.accountRow}>
@@ -41,6 +39,11 @@ export function AccountsScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={styles.accountName}>{account.nickname}</Text>
                   <Text style={styles.accountInstitution}>{account.institution}</Text>
+                  {account.kind === 'credit_card' ? <Text style={styles.accountInstitution}>
+                    Fatura em aberto: {formatCurrency(Math.abs(Math.min(0, account.balance)))}
+                    {account.billingDueDay ? ` · vence dia ${account.billingDueDay}` : ''}
+                    {account.creditLimit ? ` · limite ${formatCurrency(account.creditLimit)}` : ''}
+                  </Text> : null}
                 </View>
                 <AnimatedAmount
                   value={account.balance}
@@ -48,16 +51,13 @@ export function AccountsScreen() {
                   style={[styles.accountBalance, account.balance < 0 && styles.negative]}
                 />
               </View>
-              {account.isMock && (
-                <Text style={styles.mockTag}>Dado de exemplo — conecte seu banco em Ajustes</Text>
-              )}
             </Card>
           </FadeIn>
         ))}
 
         <View style={{ marginTop: spacing.xl }}>
           <SectionHeader title="Metas" />
-          {goals.map((goal, idx) => {
+          {goals.length === 0 ? <Text style={styles.accountInstitution}>Suas metas aparecerão aqui quando você criar a primeira.</Text> : goals.map((goal, idx) => {
             const pct = safeRatio(goal.saved, goal.target);
             return (
               <FadeIn key={goal.id} delay={idx * 60}>
@@ -81,15 +81,8 @@ export function AccountsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   scrollContent: { paddingTop: spacing.md, paddingBottom: spacing.xxl },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.xl,
-  },
-  title: { ...typography.h1, color: colors.textPrimary },
   accountCard: { marginBottom: spacing.md },
   accountRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   dot: { width: 10, height: 10, borderRadius: 5 },
@@ -97,7 +90,6 @@ const styles = StyleSheet.create({
   accountInstitution: { ...typography.caption, color: colors.textMuted },
   accountBalance: { ...typography.bodyStrong, color: colors.textPrimary },
   negative: { color: colors.danger },
-  mockTag: { ...typography.tiny, color: colors.textMuted, marginTop: spacing.sm },
   goalCard: { marginBottom: spacing.md },
   goalRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.sm },
   goalTitle: { ...typography.bodyStrong, color: colors.textPrimary },

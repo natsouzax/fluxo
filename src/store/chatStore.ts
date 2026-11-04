@@ -1,7 +1,7 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { ChatMessage } from '../data/types';
+import { profileStorage } from './profileStorage';
 
 interface ChatState {
   messages: ChatMessage[];
@@ -11,26 +11,35 @@ interface ChatState {
   clear: () => void;
 }
 
-const welcomeMessage: ChatMessage = {
-  id: 'welcome',
-  role: 'assistant',
-  content:
-    'Oi! Eu sou a IA da Fluxo. Posso analisar seus gastos, sugerir cortes, planejar metas e responder dúvidas sobre suas finanças. Configure sua chave da API em Ajustes para conversarmos de verdade — até lá, respondo com uma prévia offline.',
-  createdAt: new Date().toISOString(),
-};
+function withoutLegacySampleReplies(messages: ChatMessage[] = []): ChatMessage[] {
+  return messages.filter((message) => message.id !== 'welcome' &&
+    !(message.role === 'assistant' && /contas? de exemplo|saldo somado das contas/i.test(message.content)));
+}
 
 export const useChatStore = create<ChatState>()(
   persist(
     (set) => ({
-      messages: [welcomeMessage],
+      messages: [],
       isSending: false,
       addMessage: (message) => set((state) => ({ messages: [...state.messages, message] })),
       setSending: (sending) => set({ isSending: sending }),
-      clear: () => set({ messages: [welcomeMessage] }),
+      clear: () => set({ messages: [], isSending: false }),
     }),
     {
       name: 'fluxo-chat',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => profileStorage),
+      skipHydration: true,
+      version: 1,
+      migrate: (persisted) => ({
+        messages: withoutLegacySampleReplies((persisted as { messages?: ChatMessage[] } | undefined)?.messages),
+      }),
+      partialize: ({ messages }) => ({ messages }),
+      merge: (persisted, current) => ({
+        ...current,
+        // Also sanitize same-version records in memory before they are next saved.
+        messages: withoutLegacySampleReplies((persisted as { messages?: ChatMessage[] } | undefined)?.messages),
+        isSending: false,
+      }),
     }
   )
 );

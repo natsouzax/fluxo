@@ -1,11 +1,18 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
-import { colors, radius, spacing } from '../theme';
+import { AppColors, useThemeStyles, radius, spacing } from '../theme';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 
 function Dot({ delay }: { delay: number }) {
+  const { styles } = useThemeStyles(createStyles);
   const bounce = useRef(new Animated.Value(0)).current;
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
+    if (reducedMotion) {
+      bounce.setValue(0);
+      return;
+    }
     const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(bounce, { toValue: 1, duration: 320, delay, useNativeDriver: true }),
@@ -14,7 +21,7 @@ function Dot({ delay }: { delay: number }) {
     );
     loop.start();
     return () => loop.stop();
-  }, [bounce, delay]);
+  }, [bounce, delay, reducedMotion]);
 
   return (
     <Animated.View
@@ -30,6 +37,7 @@ function Dot({ delay }: { delay: number }) {
 }
 
 export function TypingIndicator() {
+  const { styles } = useThemeStyles(createStyles);
   return (
     <View style={styles.row}>
       <View style={styles.bubble}>
@@ -41,7 +49,7 @@ export function TypingIndicator() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   row: { flexDirection: 'row', marginBottom: spacing.md, paddingHorizontal: spacing.lg },
   bubble: {
     flexDirection: 'row',

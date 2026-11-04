@@ -21,4 +21,11 @@ export type RootStackParamList = {
   NoteEditor: { noteId?: string };
   Connections: undefined;
   Accounts: undefined;
+  AccountEditor: undefined;
+  TransactionEditor: { direction?: 'out' | 'in' | 'transfer'; taskId?: string; description?: string } | undefined;
+  BudgetEditor: undefined;
+  Bills: undefined;
+  BillEditor: undefined;
+  TaskEditor: { taskId?: string; title?: string } | undefined;
+  EventEditor: { eventId?: string; date?: string; occurrenceDate?: string };
 };

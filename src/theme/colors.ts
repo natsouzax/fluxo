@@ -1,45 +1,72 @@
-// Palette pulled from the Revolut FREE UI Kit (Figma, community) blended with
-// Wise's clean, high-contrast style: light surfaces, confident blue accent,
-// and a bright teal-green for money-in / success states.
-export const colors = {
-  bg: '#F5F6F8',
-  bgElevated: '#FFFFFF',
-  card: '#FFFFFF',
-  cardAlt: '#F0F2F5',
-  border: '#E5E8EC',
-
-  textPrimary: '#191C1F',
-  textSecondary: '#75808A',
-  textMuted: '#A6AEB6',
-
-  accent: '#0666EB', // Revolut blue
-  accentSoft: '#E6F0FD',
-  accentText: '#FFFFFF',
-
-  wise: '#00BE90', // Wise green, used for money-in / success states
-  wiseSoft: '#E1F8F0',
-
-  danger: '#EF4444',
-  dangerSoft: '#FDEAEA',
-  warning: '#EC7E00',
-  warningSoft: '#FDF0DF',
-
-  info: '#0B84FF',
-  infoSoft: '#E6F0FD',
-
-  gradientStart: '#6D4AEF',
-  gradientMid: '#3D5CF5',
-  gradientEnd: '#0666EB',
-
-  categoryPalette: [
-    '#0666EB',
-    '#4F56F1',
-    '#EC7E00',
-    '#E950A4',
-    '#00BE90',
-    '#F5A623',
-    '#75808A',
-  ],
+const shared = {
+  highlight: '#D5F478',
+  highlightText: '#163D36',
+  gradientStart: '#163D36',
+  gradientMid: '#163D36',
+  gradientEnd: '#163D36',
 };
 
-export type AppColors = typeof colors;
+export const lightColors = {
+  ...shared,
+  balanceSurface: '#163D36',
+  balanceInk: '#EFF5E9',
+  sendInk: '#D5F478',
+  bg: '#F6F5EF',
+  bgElevated: '#FFFFFF',
+  card: '#FFFFFF',
+  cardAlt: '#EEF0E8',
+  border: '#DCE3D8',
+  textPrimary: '#163D36',
+  textSecondary: '#52645D',
+  textMuted: '#5E6C64',
+  accent: '#163D36',
+  accentSoft: '#E7EEDD',
+  accentText: '#FFFFFF',
+  financeSurface: '#E7EEDD',
+  notesSurface: '#EEE8F4',
+  routineSurface: '#F7E9DB',
+  wise: '#24654D',
+  wiseSoft: '#E7EEDD',
+  danger: '#A83C32',
+  dangerSoft: '#F8E8E4',
+  warning: '#815B14',
+  warningSoft: '#F7EFDA',
+  info: '#315F89',
+  infoSoft: '#E5EEF4',
+  categoryPalette: ['#315F89', '#79618F', '#A75D42', '#A24F69', '#39795B', '#936B24', '#718078'],
+} as const;
+
+export const darkColors: AppColors = {
+  ...lightColors,
+  balanceSurface: '#202F25',
+  sendInk: '#163D36',
+  bg: '#101610',
+  bgElevated: '#18211A',
+  card: '#18211A',
+  cardAlt: '#202F25',
+  border: '#303A31',
+  textPrimary: '#EFF5E9',
+  textSecondary: '#B2C0B2',
+  textMuted: '#89998B',
+  accent: '#D5F478',
+  accentSoft: '#202F25',
+  accentText: '#163D36',
+  financeSurface: '#202F25',
+  notesSurface: '#2B2633',
+  routineSurface: '#302A23',
+  wise: '#A7DE8A',
+  wiseSoft: '#263526',
+  danger: '#FF9A94',
+  dangerSoft: '#3A2423',
+  warning: '#F0C879',
+  warningSoft: '#352E20',
+  info: '#9ABCE8',
+  infoSoft: '#222D3A',
+  gradientStart: '#18211A',
+  gradientMid: '#18211A',
+  gradientEnd: '#18211A',
+  categoryPalette: ['#9ABCE8', '#C6A4E0', '#E6A17F', '#E994AE', '#A7DE8A', '#F0C879', '#89998B'],
+};
+
+export const colors = lightColors;
+export type AppColors = { [K in keyof typeof lightColors]: typeof lightColors[K] extends readonly string[] ? readonly string[] : string };

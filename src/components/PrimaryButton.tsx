@@ -1,6 +1,7 @@
-import React, { useRef } from 'react';
-import { ActivityIndicator, Animated, Pressable, StyleSheet, Text } from 'react-native';
-import { colors, radius, spacing, typography } from '../theme';
+import React, { useEffect, useRef } from 'react';
+import { ActivityIndicator, Animated, Easing, Pressable, StyleSheet, Text } from 'react-native';
+import { useReducedMotion } from '../hooks/useReducedMotion';
+import { radius, spacing, typography, useThemeStyles, type AppColors } from '../theme';
 
 interface Props {
   label: string;
@@ -12,15 +13,18 @@ interface Props {
 }
 
 export function PrimaryButton({ label, onPress, variant = 'primary', loading, disabled, icon }: Props) {
+  const { colors, styles } = useThemeStyles(createStyles);
   const isPrimary = variant === 'primary';
   const isDanger = variant === 'danger';
   const scale = useRef(new Animated.Value(1)).current;
+  const reducedMotion = useReducedMotion();
+  useEffect(() => { if (reducedMotion) scale.setValue(1); }, [reducedMotion, scale]);
 
   function pressIn() {
-    Animated.spring(scale, { toValue: 0.96, useNativeDriver: true, speed: 40, bounciness: 6 }).start();
+    if (!reducedMotion) Animated.timing(scale, { toValue: 0.96, duration: 120, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
   }
   function pressOut() {
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 30, bounciness: 8 }).start();
+    if (!reducedMotion) Animated.timing(scale, { toValue: 1, duration: 120, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
   }
 
   return (
@@ -29,6 +33,9 @@ export function PrimaryButton({ label, onPress, variant = 'primary', loading, di
       onPressIn={pressIn}
       onPressOut={pressOut}
       disabled={disabled || loading}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: Boolean(disabled || loading), busy: Boolean(loading) }}
     >
       <Animated.View
         style={[
@@ -61,12 +68,13 @@ export function PrimaryButton({ label, onPress, variant = 'primary', loading, di
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   base: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
+    minHeight: 48,
     paddingVertical: 14,
     paddingHorizontal: spacing.lg,
     borderRadius: radius.pill,

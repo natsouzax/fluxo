@@ -3,7 +3,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { AnimatedAmount } from './AnimatedAmount';
 import { Account } from '../data/types';
-import { colors, radius, spacing, typography } from '../theme';
+import { radius, spacing, typography, useThemeStyles, type AppColors } from '../theme';
 import { formatCurrency } from '../utils/format';
 
 const kindLabel: Record<Account['kind'], string> = {
@@ -21,6 +21,7 @@ const kindIcon: Record<Account['kind'], React.ComponentProps<typeof Feather>['na
 };
 
 export function BalanceCard({ account }: { account: Account }) {
+  const { colors, styles } = useThemeStyles(createStyles);
   const isNegative = account.balance < 0;
   return (
     <View style={[styles.card, { borderColor: account.color + '55' }]}>
@@ -45,7 +46,7 @@ export function BalanceCard({ account }: { account: Account }) {
 
 const CARD_WIDTH = 220;
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   card: {
     width: CARD_WIDTH,
     backgroundColor: colors.card,

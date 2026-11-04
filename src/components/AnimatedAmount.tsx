@@ -11,7 +11,7 @@ interface Props extends TextProps {
 export function AnimatedAmount({ value, format, duration = 900, style, ...rest }: Props) {
   const animated = useCountUp(value, duration);
   return (
-    <Text style={style} {...rest}>
+    <Text style={[{ fontVariant: ['tabular-nums'] }, style]} {...rest}>
       {format(animated)}
     </Text>
   );

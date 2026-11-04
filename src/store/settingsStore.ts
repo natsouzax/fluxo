@@ -1,14 +1,6 @@
-import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
-import { createJSONStorage, persist, StateStorage } from 'zustand/middleware';
-
-// Settings can hold API keys, so this is persisted via SecureStore
-// (Android Keystore-backed) instead of plain AsyncStorage.
-const secureStorage: StateStorage = {
-  getItem: async (name) => (await SecureStore.getItemAsync(name)) ?? null,
-  setItem: async (name, value) => SecureStore.setItemAsync(name, value),
-  removeItem: async (name) => SecureStore.deleteItemAsync(name),
-};
+import { createJSONStorage, persist } from 'zustand/middleware';
+import { secureProfileStorage } from './profileStorage';
 
 interface ConnectionStatus {
   connected: boolean;
@@ -19,11 +11,17 @@ interface ConnectionStatus {
 const disconnected: ConnectionStatus = { connected: false, connectedAt: null, providerLabel: null };
 
 interface SettingsState {
-  anthropicApiKey: string | null;
+  experimentalAIEnabled: boolean;
+  setExperimentalAIEnabled: (enabled: boolean) => void;
   googleConnection: ConnectionStatus;
+  googleAccessToken: string | null;
+  googleTokenExpiresAt: string | null;
+  setGoogleToken: (token: string | null, expiresAt?: string | null) => void;
+  deviceCalendarIds: string[];
+  setDeviceCalendarIds: (ids: string[]) => void;
   openFinanceConnection: ConnectionStatus;
   themePreference: 'dark' | 'light';
-  setAnthropicApiKey: (key: string | null) => void;
+  setThemePreference: (preference: 'dark' | 'light') => void;
   setGoogleConnection: (status: ConnectionStatus) => void;
   setOpenFinanceConnection: (status: ConnectionStatus) => void;
 }
@@ -31,17 +29,45 @@ interface SettingsState {
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
-      anthropicApiKey: null,
+      experimentalAIEnabled: false,
+      setExperimentalAIEnabled: (enabled) => set({ experimentalAIEnabled: enabled }),
       googleConnection: disconnected,
+      googleAccessToken: null,
+      googleTokenExpiresAt: null,
+      setGoogleToken: (googleAccessToken, googleTokenExpiresAt = null) => set({ googleAccessToken, googleTokenExpiresAt }),
+      deviceCalendarIds: [],
+      setDeviceCalendarIds: (deviceCalendarIds) => set({ deviceCalendarIds }),
       openFinanceConnection: disconnected,
-      themePreference: 'dark',
-      setAnthropicApiKey: (key) => set({ anthropicApiKey: key }),
+      themePreference: 'light',
+      setThemePreference: (themePreference) => set({ themePreference }),
       setGoogleConnection: (status) => set({ googleConnection: status }),
       setOpenFinanceConnection: (status) => set({ openFinanceConnection: status }),
     }),
     {
       name: 'fluxo-settings-secure',
-      storage: createJSONStorage(() => secureStorage),
+      storage: createJSONStorage(() => secureProfileStorage),
+      skipHydration: true,
+      version: 2,
+      // Existing BYOK credentials are discarded and the profile record is rewritten without them.
+      migrate: (value) => settingsData(value),
+      merge: (value, current) => ({ ...current, ...settingsData(value) }),
+      partialize: ({ experimentalAIEnabled, googleConnection, googleAccessToken, googleTokenExpiresAt, deviceCalendarIds, openFinanceConnection, themePreference }) =>
+        ({ experimentalAIEnabled, googleConnection, googleAccessToken, googleTokenExpiresAt, deviceCalendarIds, openFinanceConnection, themePreference }),
     }
   )
 );
+
+function settingsData(value: unknown) {
+  const data = (value ?? {}) as Partial<SettingsState>;
+  return {
+    experimentalAIEnabled: data.experimentalAIEnabled === true,
+    googleConnection: data.googleConnection ?? disconnected,
+    googleAccessToken: data.googleAccessToken ?? null,
+    googleTokenExpiresAt: data.googleTokenExpiresAt ?? null,
+    deviceCalendarIds: Array.isArray(data.deviceCalendarIds) ? data.deviceCalendarIds : [],
+    openFinanceConnection: data.openFinanceConnection?.providerLabel === 'Contas de exemplo'
+      ? disconnected
+      : data.openFinanceConnection ?? disconnected,
+    themePreference: data.themePreference === 'dark' ? 'dark' as const : 'light' as const,
+  };
+}

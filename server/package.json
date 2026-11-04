@@ -1,0 +1,16 @@
+{
+  "name": "fluxo-assistant-dev-server",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "start": "node --env-file=.env index.mjs",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@ai-sdk/openai-compatible": "^3.0.73",
+    "ai": "^7.0.145"
+  }
+}

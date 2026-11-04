@@ -1,5 +1,6 @@
-import React, { useRef } from 'react';
-import { Animated, Pressable, PressableProps } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Animated, Easing, Pressable, PressableProps } from 'react-native';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 
 interface Props extends PressableProps {
   scaleTo?: number;
@@ -21,16 +22,20 @@ export function AnimatedPressable({
   ...rest
 }: Props) {
   const scale = useRef(new Animated.Value(1)).current;
+  const reducedMotion = useReducedMotion();
+  useEffect(() => {
+    if (reducedMotion) scale.setValue(1);
+  }, [reducedMotion, scale]);
 
   return (
     <Touchable
       accessibilityRole={accessibilityRole}
       onPressIn={(e) => {
-        Animated.spring(scale, { toValue: scaleTo, useNativeDriver: true, speed: 40, bounciness: 6 }).start();
+        if (!reducedMotion) Animated.timing(scale, { toValue: scaleTo, duration: 120, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
         onPressIn?.(e);
       }}
       onPressOut={(e) => {
-        Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 30, bounciness: 8 }).start();
+        if (!reducedMotion) Animated.timing(scale, { toValue: 1, duration: 120, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
         onPressOut?.(e);
       }}
       style={[style as any, { transform: [{ scale }] }]}

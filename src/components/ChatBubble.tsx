@@ -1,10 +1,11 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { ChatMessage } from '../data/types';
-import { colors, radius, spacing, typography } from '../theme';
+import { radius, spacing, typography, useThemeStyles, type AppColors } from '../theme';
 import { FadeIn } from './FadeIn';
 
 export function ChatBubble({ message }: { message: ChatMessage }) {
+  const { colors, styles } = useThemeStyles(createStyles);
   const isUser = message.role === 'user';
   return (
     <FadeIn duration={280} distance={10}>
@@ -17,17 +18,15 @@ export function ChatBubble({ message }: { message: ChatMessage }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   row: { flexDirection: 'row', marginBottom: spacing.md, paddingHorizontal: spacing.lg },
   rowUser: { justifyContent: 'flex-end' },
-  bubble: { maxWidth: '82%', padding: spacing.md, borderRadius: radius.lg },
+  bubble: { maxWidth: '90%', padding: spacing.md, borderRadius: radius.lg },
   bubbleAssistant: {
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: colors.accentSoft,
     borderBottomLeftRadius: 4,
   },
-  bubbleUser: { backgroundColor: colors.accent, borderBottomRightRadius: 4 },
+  bubbleUser: { backgroundColor: colors.balanceSurface, borderBottomRightRadius: 4 },
   text: { ...typography.body, color: colors.textPrimary, lineHeight: 21 },
-  textUser: { color: colors.accentText },
+  textUser: { color: colors.balanceInk },
 });

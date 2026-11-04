@@ -1,101 +1,72 @@
 import { Feather } from '@expo/vector-icons';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import React, { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { BottomTabNavigationProp, createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import React from 'react';
+import { View, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { QuickActionsFab } from '../components/QuickActionsFab';
 import { AgendaScreen } from '../screens/AgendaScreen';
 import { ChatScreen } from '../screens/ChatScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { NotesScreen } from '../screens/NotesScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
-import { colors, typography } from '../theme';
+import { typography, useAppThemeColors } from '../theme';
 import { TabParamList } from './types';
+import { RootStackParamList } from './types';
 
 const Tab = createBottomTabNavigator<TabParamList>();
-
 const icons: Record<keyof TabParamList, React.ComponentProps<typeof Feather>['name']> = {
-  Home: 'home',
-  Chat: 'message-circle',
-  Notes: 'file-text',
-  Agenda: 'calendar',
-  Settings: 'settings',
+  Home: 'trending-up', Chat: 'message-circle', Notes: 'file-text', Agenda: 'calendar', Settings: 'settings',
 };
-
 const labels: Record<keyof TabParamList, string> = {
-  Home: 'Início',
-  Chat: 'IA',
-  Notes: 'Notas',
-  Agenda: 'Rotina',
-  Settings: 'Ajustes',
+  Home: 'Finanças', Chat: 'Fluxo', Notes: 'Notas', Agenda: 'Rotina', Settings: 'Ajustes',
 };
 
-function TabIcon({
-  name,
-  label,
-  focused,
-}: {
-  name: React.ComponentProps<typeof Feather>['name'];
-  label: string;
-  focused: boolean;
-}) {
-  const scale = useRef(new Animated.Value(1)).current;
-  const indicatorWidth = useRef(new Animated.Value(focused ? 28 : 0)).current;
-
-  useEffect(() => {
-    if (focused) {
-      scale.setValue(0.85);
-      Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 30, bounciness: 12 }).start();
-    }
-    Animated.timing(indicatorWidth, {
-      toValue: focused ? 28 : 0,
-      duration: 220,
-      useNativeDriver: false,
-    }).start();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focused]);
-
+function HomeWithQuickActions() {
+  const tabNavigation = useNavigation<BottomTabNavigationProp<TabParamList>>();
+  const navigation = tabNavigation.getParent<NativeStackNavigationProp<RootStackParamList>>();
   return (
-    <View style={styles.tabItem}>
-      <Animated.View style={{ transform: [{ scale }] }}>
-        <Feather name={name} size={20} color={focused ? colors.accent : colors.textMuted} />
-      </Animated.View>
-      <Text style={[styles.tabLabel, { color: focused ? colors.accent : colors.textMuted }]}>{label}</Text>
-      <Animated.View style={[styles.indicator, { width: indicatorWidth }]} />
+    <View style={{ flex: 1 }}>
+      <HomeScreen />
+      <QuickActionsFab
+        bottomOffset={16}
+        onAddExpense={() => navigation?.navigate('TransactionEditor', { direction: 'out' })}
+        onAddIncome={() => navigation?.navigate('TransactionEditor', { direction: 'in' })}
+        onAddAccount={() => navigation?.navigate('AccountEditor')}
+        onAddBill={() => navigation?.navigate('BillEditor')}
+        onTransfer={() => navigation?.navigate('TransactionEditor', { direction: 'transfer' })}
+      />
     </View>
   );
 }
 
 export function TabNavigator() {
+  const colors = useAppThemeColors();
+  const insets = useSafeAreaInsets();
+  const { fontScale } = useWindowDimensions();
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarShowLabel: false,
-        tabBarStyle: {
-          backgroundColor: colors.bgElevated,
-          borderTopColor: colors.border,
-          height: 72,
-          paddingTop: 10,
-        },
-        tabBarIcon: ({ focused }) => (
-          <TabIcon
-            name={icons[route.name as keyof TabParamList]}
-            label={labels[route.name as keyof TabParamList]}
-            focused={focused}
-          />
-        ),
-      })}
-    >
-      <Tab.Screen name="Home" component={HomeScreen} />
+    <Tab.Navigator initialRouteName="Chat" screenOptions={({ route }) => ({
+      headerShown: false,
+      tabBarHideOnKeyboard: true,
+      tabBarLabel: labels[route.name],
+      tabBarAccessibilityLabel: labels[route.name],
+      tabBarActiveTintColor: colors.textPrimary,
+      tabBarInactiveTintColor: colors.textMuted,
+      tabBarLabelStyle: { ...typography.tiny, fontSize: 11, marginTop: 4 },
+      tabBarItemStyle: { minHeight: 48, paddingVertical: 4 },
+      tabBarStyle: { backgroundColor: colors.bgElevated, borderTopColor: colors.border,
+        height: 68 + insets.bottom + Math.max(0, fontScale - 1) * 28, paddingTop: 4, paddingBottom: Math.max(insets.bottom, 8) },
+      tabBarIcon: ({ focused }) => <View style={{ width: 36, height: 28, borderRadius: 10,
+        alignItems: 'center', justifyContent: 'center', backgroundColor: focused ? colors.highlight : 'transparent' }}>
+        <Feather name={icons[route.name]} size={19} color={focused ? colors.highlightText : colors.textMuted} />
+      </View>,
+    })}>
       <Tab.Screen name="Chat" component={ChatScreen} />
+      <Tab.Screen name="Home" component={HomeWithQuickActions} />
       <Tab.Screen name="Notes" component={NotesScreen} />
       <Tab.Screen name="Agenda" component={AgendaScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );
 }
-
-const styles = StyleSheet.create({
-  tabItem: { alignItems: 'center', gap: 4, width: 64 },
-  tabLabel: { ...typography.tiny, fontWeight: '600' },
-  indicator: { height: 2, borderRadius: 1, marginTop: 6, backgroundColor: colors.accent },
-});

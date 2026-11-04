@@ -1,4 +1,4 @@
-import { formatCurrency, initials, safeRatio } from '../format';
+import { formatCurrency, initials, parseMoney, safeRatio } from '../format';
 
 // pt-BR currency output separates the symbol with a non-breaking space, and the
 // exact codepoint varies by ICU version — compare on normalised whitespace.
@@ -46,6 +46,19 @@ describe('safeRatio', () => {
   it('returns 0 for non-finite input', () => {
     expect(safeRatio(NaN, 100)).toBe(0);
     expect(safeRatio(100, Infinity)).toBe(0);
+  });
+});
+
+describe('parseMoney', () => {
+  it('parses Brazilian decimal and thousands separators', () => {
+    expect(parseMoney('1.234,56')).toBe(1234.56);
+    expect(parseMoney('75,90')).toBe(75.9);
+  });
+
+  it('accepts decimal dots and rejects empty or malformed values', () => {
+    expect(parseMoney('75.90')).toBe(75.9);
+    expect(parseMoney('')).toBeNull();
+    expect(parseMoney('abc')).toBeNull();
   });
 });
 
