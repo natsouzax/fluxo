@@ -9,14 +9,20 @@ export interface Account {
   currency: string;
   color: string;
   lastSyncedAt: string | null;
-  isMock: boolean;
+  /** Credit card statement due day in the month, from 1 to 28. */
+  billingDueDay?: number;
+  creditLimit?: number;
+  /** Legacy flag used only to remove example accounts from older local profiles. */
+  isMock?: boolean;
 }
 
-export type TransactionDirection = 'in' | 'out';
+export type TransactionDirection = 'in' | 'out' | 'transfer';
 
 export interface Transaction {
   id: string;
   accountId: string;
+  /** Destination account for internal transfers. */
+  destinationAccountId?: string;
   description: string;
   merchant: string;
   category: string;
@@ -29,8 +35,19 @@ export interface Budget {
   id: string;
   category: string;
   limit: number;
-  spent: number;
+  spent: number; // Derived monthly view; never treat a persisted value as the source of spending.
   color: string;
+}
+
+export interface Bill {
+  id: string;
+  title: string;
+  amount: number;
+  dueDate: string; // Local calendar date in YYYY-MM-DD format.
+  category: string;
+  accountId: string;
+  recurrence: 'none' | 'monthly';
+  paid: boolean;
 }
 
 export interface Goal {
@@ -56,9 +73,19 @@ export interface AgendaEvent {
   title: string;
   start: string; // ISO datetime
   end: string;
-  source: 'local' | 'google';
+  source: 'local' | 'google' | 'device';
   financeRelated?: boolean;
   notes?: string;
+  location?: string;
+  url?: string;
+  category?: 'personal' | 'work' | 'study' | 'shopping' | 'project';
+  recurrence?: 'none' | 'daily' | 'weekly' | 'monthly';
+  recurrenceUntil?: string | null;
+  excludedDates?: string[];
+  reminderMinutes?: number | null;
+  /** Projection fields: identify a single occurrence without duplicating the series. */
+  seriesId?: string;
+  occurrenceDate?: string;
 }
 
 export interface ChatMessage {

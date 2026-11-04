@@ -3,54 +3,55 @@
 ## Reportar uma vulnerabilidade
 
 Abra uma [Security Advisory privada](https://github.com/natsouzax/fluxo/security/advisories/new)
-no GitHub, ou mande um e-mail para **natanaplications@gmail.com**. Por favor, não abra uma issue
-pública para falhas de segurança.
-
+ou envie e-mail para natanaplications@gmail.com. Evite publicar detalhes de falhas em issues públicas.
 Retorno esperado em até 5 dias úteis.
 
-## O que este repositório contém — e não contém
+## Assistente atual e segredos
 
-Este repositório é **público de propósito**, como portfólio. Nada aqui é segredo:
+O assistente usa regras locais por padrão. O cliente não chama o provedor de LLM diretamente, não
+solicita chave de provedor ao usuário e não tem credencial de IA embutida. A integração direta com Anthropic
+foi removida. Ajustes por perfil são migrados para descartar os campos anteriores de chave e permissão.
+Essa migração não revoga uma credencial no fornecedor nem apaga registros globais legados sem dono.
 
-| Item | Onde vive | Está no repo? |
-|---|---|---|
-| Chave da API da Anthropic | `expo-secure-store` no aparelho do usuário | ❌ nunca |
-| Google OAuth Client ID | `app.json` → `expo.extra.googleOAuthClientId` (nulo aqui) | ❌ nulo por padrão |
-| Client secret de agregador Open Finance | backend próprio (ainda não existe) | ❌ nunca |
-| Keystore de assinatura Android | EAS Build (nuvem) / máquina local | ❌ ignorado no git |
-| EAS `projectId` e `owner` | `app.json` | ✅ são identificadores públicos, não credenciais |
+O backend experimental em `server/` usa uma credencial do responsável somente em `server/.env`.
+Está fixado no loopback, não autentica usuários de produção e não deve ser publicado. O app aceita
+somente URLs locais predefinidas em desenvolvimento e exige permissão de contexto. Sem configuração
+ou permissão, mantém o algoritmo local. Variáveis públicas do Expo, app.json e código
+compilado não devem conter segredos. .gitignore ignora .env, credenciais e arquivos de assinatura.
+Os identificadores EAS projectId e owner em app.json são públicos; Google Client ID está nulo.
 
-O [.gitignore](.gitignore) bloqueia explicitamente `.env`, `google-services.json`,
-`GoogleService-Info.plist`, keystores (`*.jks`, `*.keystore`, `*.p12`) e certificados.
+Credenciais expostas devem ser revogadas e substituídas, sem envio pelo chat. `server/configure.ps1`
+permite a entrada local mascarada. Por autorização explícita do responsável, a credencial de desenvolvimento
+foi configurada no arquivo ignorado `server/.env` e validada em uma chamada real. O backend restringe modelo/preço, desativa retry do SDK, permite failover somente sob tetos de preço zero e limita
+o volume de testes. Esses limites em memória reiniciam com o processo e não são controles de produção.
 
-## Modelo de ameaça conhecido
+## Perfis e armazenamento
 
-### A chave da IA fica no aparelho (aceito no MVP, não em produção)
+As stores de finanças, notas, agenda, chat e ajustes só são mostradas depois de carregar o perfil.
+Gravações capturam o perfil de origem e são ordenadas por chave. Hidratações de sessões anteriores
+não podem sobrescrever a sessão atual. Logout limpa a memória e invalida tarefas pendentes.
+Dados globais antigos ficam preservados, sem atribuição automática a outro perfil.
 
-O app chama a API da Anthropic **direto do dispositivo**, com a chave que o próprio usuário cola em
-Ajustes. Ela é guardada via [`expo-secure-store`](https://docs.expo.dev/versions/v57.0.0/sdk/securestore/),
-que no Android usa o Keystore do sistema.
+O login continua mock: qualquer senha bem formada é aceita. A separação de perfis evita mistura
+acidental, mas não impede alguém de entrar com o mesmo e-mail. Não há verificação de identidade,
+backend, criptografia de aplicação para AsyncStorage ou bloqueio biométrico implementados.
+Notas e conversas digitadas podem conter dados pessoais, mesmo com finanças de exemplo.
 
-Isso é aceitável enquanto **a chave é do próprio usuário** — ele só pode vazar a si mesmo. **Não é
-aceitável** num modelo em que o app usa uma chave minha: um APK pode ser decompilado, e o tráfego,
-interceptado. A migração planejada é mover a chamada para um backend próprio, com o app autenticando
-no backend em vez de carregar a chave (ver [Roadmap no README](README.md#roadmap)).
+## Integrações
 
-### Autenticação é mock
+Open Finance usa dados de exemplo. Google tem código de OAuth e importação, desativado sem Client ID;
+precisa de validação autenticada. Nenhum segredo de agregador bancário deve ser incluído no app.
+Calendários já sincronizados no aparelho podem ser lidos com permissão e seleção explícita; os eventos
+selecionados ficam no armazenamento local do perfil.
+A comunicação externa opcional está descrita em [PRIVACY.md](PRIVACY.md).
 
-`src/store/authStore.ts` aceita qualquer e-mail/senha bem formados e guarda a sessão localmente.
-**Não há backend, não há verificação, não há dado real de ninguém.** Está marcado como mock no
-código e existe apenas para demonstrar o fluxo de telas. Precisa ser substituído por autenticação
-de verdade antes de qualquer uso com dados reais.
-
-### Dados financeiros são de exemplo
-
-Contas, transações, orçamentos e metas vêm de `src/data/mockFinance.ts`. Nenhum banco real está
-conectado, e o app não faz upload de nada para lugar nenhum — a persistência é local
-(AsyncStorage/SecureStore).
+Qualquer ativação futura de LLM deve preservar isolamento por usuário, autenticação real, limites de
+uso, minimização de contexto e comportamento local quando o serviço estiver indisponível. Uma oferta
+gratuita não autoriza envio de dados pessoais nem fallback para um modelo cobrado.
 
 ## Dependências
 
-`npm audit` reporta vulnerabilidades transitivas no toolchain do Expo (`@expo/config`,
-`@expo/config-plugins`). São dependências de **build**, não vão para o bundle do app, e `npm audit
-fix --force` quebra o Expo SDK 57. Serão resolvidas quando o Expo publicar as atualizações upstream.
+O diagnóstico de 20/10/2026 encontrou advisories em cadeias de Expo, Metro, Jest e navegação, incluindo
+uma entrada crítica em shell-quote. A triagem por versão e caminho executado permanece pendente.
+Não se deve assumir que tudo é somente build ou que toda entrada é explorável no aparelho.
+Atualizações devem manter compatibilidade com o SDK; npm audit fix --force não foi executado.

@@ -1,186 +1,123 @@
 # Fluxo
 
-**Finanças, notas e rotina num app só — com uma IA que enxerga seu contexto financeiro.**
+**Seu assistente pessoal para finanças, notas e rotina, começando pela conversa.**
 
-Um app React Native (Expo) que cruza o controle de contas de um **My Finances**, o copiloto
-conversacional do **Pierre** e a organização em notas do **Notion**, com a linguagem visual dos kits
-do **Revolut** e do **Wise**.
+Status: protótipo em desenvolvimento. Perfis novos começam sem dados de exemplo. O login é local neste
+aparelho e ainda não valida identidade em um servidor. O assistente usa regras locais por padrão. Há
+uma opção de OpenRouter via backend somente local, ativada explicitamente em desenvolvimento.
 
-[![CI](https://github.com/natsouzax/fluxo/actions/workflows/ci.yml/badge.svg)](https://github.com/natsouzax/fluxo/actions/workflows/ci.yml)
-![Expo SDK 57](https://img.shields.io/badge/Expo%20SDK-57-000020?logo=expo&logoColor=white)
-![React Native 0.86](https://img.shields.io/badge/React%20Native-0.86-61DAFB?logo=react&logoColor=black)
-![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+## Visão e funcionamento atual
 
-> **Status:** MVP funcional, em preparação para a Play Store. Os dados financeiros são de exemplo —
-> ver [O que é real e o que é mock](#o-que-é-real-e-o-que-é-mock).
+A visão é gerir o fluxo da vida conectando finanças, compromissos e anotações por um assistente.
+Nesta fase, o Fluxo consulta os registros disponíveis e abre as abas; ainda não registra despesas,
+cria notas ou altera compromissos por conversa. Relações de causa entre rotina e gastos e projeções
+financeiras não estão implementadas.
 
----
+Depois do login ou da restauração de sessão, a primeira aba é **Fluxo**, com saudação, resumo dos dados,
+atalhos e chat. A barra inferior mantém Fluxo, Finanças, Notas, Rotina e Ajustes.
 
-## A ideia
+| Pergunta | Comportamento local |
+|---|---|
+| “Quero ver minhas finanças” | Abre Finanças |
+| “Qual meu saldo?” | Soma saldos disponíveis, mantendo moedas separadas |
+| “Quanto gastei hoje?” | Soma saídas do dia nos registros disponíveis |
+| “E ontem?” | Mantém o assunto financeiro da pergunta anterior e troca o período |
+| “Como está meu orçamento?” | Calcula uso proporcional a partir das transações do mês |
+| “Como está minha reserva?” | Mostra valores registrados e quanto falta para a meta |
+| “Meus compromissos amanhã” | Lista os eventos registrados que se sobrepõem ao dia |
+| “Buscar notas sobre viagem” | Busca em títulos, corpos e tags |
+| “Faça um resumo do meu dia” | Reúne gastos do mês, agenda de hoje e quantidade de notas |
+| “Registre uma despesa” | Explica a limitação; não altera os dados |
 
-A maioria dos apps de finanças responde "quanto você gastou". Poucos respondem **"e daí?"**.
-
-O Fluxo parte do princípio de que decisão financeira não acontece numa planilha isolada: ela depende
-do que você anotou, do que vence essa semana e de quanto sobra até o fim do mês. Por isso as três
-partes — **finanças**, **notas** e **agenda** — compartilham o mesmo estado, e a IA recebe as três
-como contexto na mesma chamada.
-
-Perguntar "posso viajar em março?" cruza saldo, orçamento, metas e os compromissos já marcados.
-
----
-
-## Telas
-
-| Início | Copiloto IA | Notas | Rotina |
-|---|---|---|---|
-| Saldo consolidado, carrossel de contas, gastos por categoria, orçamentos com progresso animado | Chat com contexto financeiro real injetado no system prompt | Notas com tags, ligadas a decisões e metas | Compromissos do dia com destaque para eventos financeiros |
-
-> 📸 _Screenshots a adicionar — rode `npx expo start` e veja no Expo Go._
-
----
+O motor é determinístico e limitado ao vocabulário implementado. Não deve ser apresentado como IA
+generativa. Perguntas que ele não entende recebem exemplos do que é possível consultar.
 
 ## Rodando localmente
 
-Requisitos: Node 20+ e o app **Expo Go** no Android.
+Requisitos: Node 22.13+ e Expo Go compatível com SDK 57 no Android.
 
 ```bash
-git clone https://github.com/natsouzax/fluxo.git
-cd fluxo
-npm install
-npx expo start
+npm ci
+npx expo start --go
 ```
 
-Escaneie o QR code com o Expo Go. O app abre já populado com dados de exemplo — dá para navegar por
-tudo sem configurar nada.
-
-**Conta de teste:** o login vem pré-preenchido (`teste@fluxo.app` / `fluxo123`). É só tocar em Entrar.
+Para começar, toque em **Criar conta** e use seus próprios dados. O cadastro é armazenado localmente
+neste aparelho; ainda não há autenticação de produção. Para um development build já instalado:
+`npx expo start --dev-client`.
 
 ```bash
-npm run typecheck   # tsc --noEmit
-npm test            # 24 testes (Jest + jest-expo)
+npm run typecheck
+npm test -- --runInBand --ci
 ```
 
-Para gerar um APK real, sem Expo Go:
+Não é necessário criar `.env` ou cadastrar uma chave para testar o assistente local.
+Para IA opcional, veja [OpenRouter em desenvolvimento](docs/OPENROUTER-DEV.md).
 
-```bash
-npx eas build -p android --profile preview
-```
+## Arquitetura e dados
 
----
+- `src/services/localAssistant.ts`: interpretação por regras e respostas sobre os dados locais.
+- `src/services/assistantTypes.ts`: contrato de contexto, histórico e resposta do assistente.
+- `src/services/assistantNavigation.ts`: destinos permitidos para pedidos explícitos de navegação.
+- `src/services/remoteAssistant.ts`: backend local opcional, contexto reduzido e retorno ao modo local.
+- `server/`: backend de desenvolvimento com AI SDK; credencial exclusivamente no ambiente do servidor.
+- `src/domain/`: cálculos financeiros e seleção de eventos do dia.
+- `src/store/`: estado Zustand; dados em AsyncStorage e ajustes em SecureStore.
+- `src/store/profileStorage.ts`: separação por perfil, ordenação de gravações e invalidação de sessão.
+- `src/data/financeMetrics.ts`: cálculos puros de saldo e gastos; perfis começam sem registros financeiros pré-carregados.
+- `src/screens/` e `src/navigation/`: telas e navegação React Navigation.
 
-## Arquitetura
+Finanças, notas, agenda e histórico são persistidos no aparelho, sem criptografia de aplicação.
+Os perfis evitam mistura acidental, mas não são uma barreira de autenticação. Logout limpa a memória
+e mantém o perfil no disco. Não há backend de produção, sincronização em nuvem ou recuperação implementados.
+Notas são gravadas enquanto se edita; o indicador confirma a operação de disco ou informa falha.
 
-```
-src/
-  theme/        # design tokens: cores, espaçamento, tipografia, raios
-  navigation/   # bottom tabs + stack raiz + stack de auth, com navigationRef
-  store/        # Zustand: finanças, notas, agenda, chat, auth, ajustes, drawer
-  data/         # tipos do domínio + seed data (contas, transações, orçamentos)
-  services/     # IA (Claude), Google OAuth, Open Finance (interface trocável)
-  components/   # UI reutilizável (cards, botões, animações)
-  screens/      # telas, incluindo o fluxo de autenticação
-```
+Registros globais da versão antiga, sem dono verificável, são preservados e não são importados
+automaticamente. Ajustes por perfil são migrados para remover a antiga chave pessoal e a permissão
+de envio à Anthropic. Não há mais integração direta com Anthropic no cliente. Essa remoção não revoga
+chaves no fornecedor nem apaga registros globais legados sem proprietário.
 
-### Decisões que valem comentar
+## Integrações externas
 
-**Zustand com persistência seletiva por sensibilidade.** Cada store escolhe o storage conforme o que
-guarda: finanças, notas, agenda e chat vão para `AsyncStorage`; **ajustes vão para
-`expo-secure-store`**, porque guardam a chave da API — no Android isso significa Keystore do sistema,
-não texto plano.
+Na tela **Conexões**, o usuário pode permitir acesso aos calendários do aparelho e escolher quais
+mostrar na aba **Rotina**. Isso inclui calendários Google que já estejam sincronizados no telefone.
+Os eventos são lidos em uma janela em torno do dia selecionado e podem ser atualizados pelo botão
+de recarregar. O Fluxo não altera eventos do aparelho. A permissão requer uma nova build nativa
+com `expo-calendar`; o recurso não funciona no Expo Go.
 
-**A camada de Open Finance é uma interface, não uma integração.** `src/services/openFinance.ts`
-define o contrato (`connect()` devolvendo contas + transações) e hoje só o `mockProvider` o
-implementa. Trocar por Pluggy ou Belvo é substituir uma implementação, não reescrever as telas — o
-resto do app só conhece o contrato.
+A conexão direta à API do Google continua experimental: o Client ID em `app.json` está nulo e o
+OAuth nativo ainda não foi validado. O fluxo atual não renova o token; depois que ele expira, é
+necessário reconectar. O Google não aceita redirecionamentos por esquema próprio para apps Android,
+portanto configurar apenas o Client ID não basta para habilitar esse caminho no Android. O escopo
+solicitado pela conexão direta agora é somente leitura do Calendar.
 
-**O contexto da IA é montado a partir do estado vivo.** `buildSystemPrompt()` serializa saldo,
-transações recentes, orçamentos, metas e notas a cada pergunta. Não há RAG nem embeddings: para o
-volume de um usuário pessoal, mandar o snapshot inteiro é mais simples, mais barato e mais preciso.
+Perfis novos não carregam contas ou transações fictícias. Open Finance ainda não está configurado;
+uma integração real exige backend e implementação adicional. Nenhum segredo de agregador deve ficar no app.
 
-**O histórico do chat é saneado antes de virar request.** A Messages API exige que a primeira
-mensagem seja `user`, e o chat abre com uma saudação do assistente. `toApiHistory()` descarta o que
-vem antes do primeiro turno do usuário e funde turnos consecutivos do mesmo papel — [coberto por
-testes](src/services/__tests__/aiService.test.ts).
+## IA experimental e direção para produção
 
----
+A decisão do produto é usar uma credencial administrada pelo dono do Fluxo, sem pedir chave ao usuário.
+O fluxo experimental é **app → backend local do Fluxo → OpenRouter → modelo gratuito**.
+O responsável administra a chave em `server/.env`; a raiz `.env` contém somente a URL pública.
+A configuração local foi validada com uma geração real gratuita. O backend não autentica usuários de
+produção e só escuta no computador local. O cliente bloqueia a opção em builds de produção.
 
-## O que é real e o que é mock
+Opções gratuitas e critérios para experimentar estão em [Assistente local e IA futura](docs/ASSISTENTE-LOCAL.md).
+Nenhum plano pago, fallback pago, download de modelo ou deploy foi ativado. Consultas conhecidas
+continuam locais; somente perguntas não reconhecidas seguem para IA com permissão ativa. Falhas
+retornam ao algoritmo local. Configuração e restrições em [OPENROUTER-DEV](docs/OPENROUTER-DEV.md).
 
-Honestidade sobre o estado do MVP:
+## Verificação e pendências
 
-| Área | Estado |
-|---|---|
-| Navegação, telas, animações, tema | ✅ Real |
-| Persistência local (AsyncStorage + SecureStore) | ✅ Real |
-| Notas — criar, editar, apagar, tags | ✅ Real |
-| Orçamentos, metas, agregação de gastos | ✅ Real (sobre dados de exemplo) |
-| **Chat com IA** | ✅ **Integração real** com a API da Anthropic. Sem chave, cai num modo offline com respostas básicas |
-| Google Calendar / Gmail | 🟡 OAuth implementado, precisa de um Client ID do Google Cloud |
-| Contas e transações bancárias | 🔴 Dados de exemplo (`src/data/mockFinance.ts`) |
-| Autenticação | 🔴 Mock — aceita qualquer e-mail/senha válidos, sem backend |
+O projeto tem testes de domínio, persistência de perfis, notas e interação do chat. Testes de componentes
+simulam infraestrutura nativa e não substituem validação de teclado, layout, rolagem e Voltar no aparelho.
 
-As três lacunas dependem de credenciais que só o dono do app pode gerar. Em vez de deixar telas
-quebradas, cada uma virou uma camada bem delimitada e fácil de trocar.
-
-### Ativando a IA de verdade
-
-1. Gere uma chave em [console.anthropic.com](https://console.anthropic.com).
-2. No app: **Ajustes → IA → colar a chave → Salvar**.
-
-A chave fica só no seu aparelho, no SecureStore. O app passa a usar o Claude com contexto real das
-suas contas, transações, orçamentos, metas e notas.
-
-### Conectando bancos (Open Finance)
-
-Agregadores como **Pluggy** ou **Belvo** exigem conta business (KYC de empresa) e — crucialmente —
-o client secret **não pode** ficar no app. É preciso um backend mínimo que gere o `connect_token` e
-o repasse. Com isso pronto, troque `mockProvider` por `pluggyProvider` em `openFinance.ts`.
-
-### Conectando o Google
-
-Crie um projeto no [Google Cloud Console](https://console.cloud.google.com/), ative as APIs de
-Calendar/Gmail/Drive, gere um OAuth Client ID do tipo Android (package `com.fluxo.app` + SHA-1 da sua
-chave de assinatura) e coloque em `app.json` → `expo.extra.googleOAuthClientId`. Sem isso, a tela de
-Conexões mostra o Google como "em breve" em vez de um botão que falha.
-
----
-
-## Segurança
-
-Ver [SECURITY.md](SECURITY.md) para o modelo de ameaça completo. Resumo:
-
-- **Nenhuma credencial neste repositório.** Chaves ficam no aparelho do usuário via SecureStore.
-- A chave da IA sair do dispositivo é uma **limitação aceita do MVP**, não um descuido — funciona
-  porque a chave é do próprio usuário. Migrar para um backend está no roadmap.
-- Autenticação e dados bancários são mock. Nenhum dado real de ninguém passa por aqui.
-
-## Privacidade
-
-O app **não tem servidor e não coleta nada**. Tudo fica no aparelho (AsyncStorage + Keystore). O
-único dado que sai do dispositivo é a pergunta enviada à API da Anthropic — e só se o usuário
-configurar a própria chave. Política completa em [PRIVACY.md](PRIVACY.md).
-
-Para a **Data Safety** da Play Store, isso corresponde a: nenhum dado coletado, nenhum dado
-compartilhado, sem rastreadores, sem anúncios.
-
----
-
-## Roadmap
-
-- [ ] Backend próprio para a chamada da IA (tirar a chave do dispositivo)
-- [ ] Autenticação real substituindo o mock
-- [ ] Integração Open Finance via Pluggy, com o backend do `connect_token`
-- [ ] Google Calendar populando a aba Rotina
-- [ ] Identidade visual própria — ícone e splash ainda são placeholder
-- [ ] Publicação na Play Store
-
----
+Continuam pendentes: autenticação real, entrada de dados financeiros pelo usuário, escrita por conversa,
+sincronização, Open Finance, validação de Google, triagem de dependências e distribuição.
+Veja [SECURITY.md](SECURITY.md) e [PRIVACY.md](PRIVACY.md).
 
 ## Stack
 
-React Native 0.86 · Expo SDK 57 · TypeScript · Zustand · React Navigation 7 ·
-expo-secure-store · expo-auth-session · react-native-chart-kit · date-fns · Jest
+React Native 0.86 · Expo SDK 57 · TypeScript · Zustand · React Navigation 7 · AsyncStorage · SecureStore · Jest.
 
 ## Licença
 

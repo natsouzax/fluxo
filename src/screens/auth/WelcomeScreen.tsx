@@ -1,27 +1,24 @@
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AnimatedPressable } from '../../components/AnimatedPressable';
+import { BrandLockup } from '../../components/BrandMark';
 import { FadeIn } from '../../components/FadeIn';
 import { AuthStackParamList } from '../../navigation/types';
-import { colors, radius, spacing, typography } from '../../theme';
+import { radius, spacing, typography, useThemeStyles, type AppColors } from '../../theme';
 
 export function WelcomeScreen() {
+  const { colors, styles } = useThemeStyles(createStyles);
   const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
 
   return (
-    <LinearGradient
-      colors={[colors.gradientStart, colors.gradientMid, colors.gradientEnd]}
-      start={{ x: 0.1, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.container}
-    >
+    <SafeAreaView style={styles.container} edges={['top', 'bottom', 'left', 'right']}>
       <FadeIn delay={80} distance={20} style={styles.content}>
-        <Text style={styles.logo}>Fluxo</Text>
+        <BrandLockup size={88} />
         <Text style={styles.tagline}>
-          Finanças, notas e rotina em um só lugar — com uma IA que conhece seu contexto.
+          Finanças, notas e rotina em um só lugar — com o Fluxo, seu assistente pessoal.
         </Text>
       </FadeIn>
 
@@ -33,23 +30,23 @@ export function WelcomeScreen() {
           <Text style={styles.loginText}>Já tenho conta — Entrar</Text>
         </AnimatedPressable>
       </FadeIn>
-    </LinearGradient>
+    </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'space-between',
+    backgroundColor: colors.bg,
     paddingHorizontal: spacing.xl,
-    paddingTop: spacing.xxl * 2,
+    paddingTop: spacing.lg,
     paddingBottom: spacing.xxl,
   },
-  content: { alignItems: 'center', marginTop: spacing.xxl },
-  logo: { ...typography.display, fontSize: 44, color: '#FFFFFF' },
+  content: { alignItems: 'center', marginTop: spacing.xxl * 2 },
   tagline: {
     ...typography.body,
-    color: 'rgba(255,255,255,0.85)',
+    color: colors.textSecondary,
     textAlign: 'center',
     marginTop: spacing.lg,
     paddingHorizontal: spacing.lg,
@@ -57,12 +54,13 @@ const styles = StyleSheet.create({
   },
   actions: { gap: spacing.md },
   primaryBtn: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: radius.pill,
-    paddingVertical: 16,
+    backgroundColor: colors.accent,
+    borderRadius: radius.lg,
+    minHeight: 52,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  primaryBtnText: { ...typography.bodyStrong, color: colors.accent },
-  loginBtn: { alignItems: 'center', paddingVertical: spacing.md },
-  loginText: { ...typography.bodyStrong, color: '#FFFFFF' },
+  primaryBtnText: { ...typography.bodyStrong, color: colors.accentText },
+  loginBtn: { alignItems: 'center', paddingVertical: spacing.md, minHeight: 48 },
+  loginText: { ...typography.bodyStrong, color: colors.textPrimary },
 });

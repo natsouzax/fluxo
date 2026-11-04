@@ -7,14 +7,14 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "backgroundColor": "#F5F6F8",
+    "backgroundColor": "#F6F5EF",
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "package": "com.fluxo.app",
       "adaptiveIcon": {
-        "backgroundColor": "#F5F6F8",
+        "backgroundColor": "#D5F478",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -25,10 +25,27 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Permita que o Fluxo leia os calendários escolhidos no aparelho para mostrar seus compromissos."
+        }
+      ],
       "expo-secure-store",
       "expo-web-browser",
       "expo-status-bar",
-      "expo-font"
+      [
+        "expo-navigation-bar",
+        {
+          "enforceContrast": false,
+          "hidden": false
+        }
+      ],
+      [
+        "expo-font",
+        {}
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "extra": {
       "googleOAuthClientId": null,

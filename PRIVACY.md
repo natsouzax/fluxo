@@ -1,86 +1,88 @@
 # Política de Privacidade — Fluxo
 
-**Última atualização:** 29 de julho de 2026
+Atualização: 20 de outubro de 2026.
 
-O Fluxo é um app de finanças pessoais, notas e rotina. Esta política descreve como o app trata seus
-dados. Em resumo: **o Fluxo não tem servidor e não coleta nada sobre você.**
+O Fluxo é um protótipo de finanças, notas e rotina. Usa regras no aparelho por padrão. Existe uma
+opção experimental via backend no computador de desenvolvimento e OpenRouter, desligada por padrão.
+Não há backend de produção ou sincronização em nuvem implementados.
 
-## Resumo
+## Armazenamento local
 
-| | |
-|---|---|
-| Coletamos dados pessoais? | **Não** |
-| Há servidor ou banco de dados nosso? | **Não** |
-| Seus dados saem do aparelho? | Só se **você** configurar a IA — e apenas para a Anthropic |
-| Há anúncios ou rastreadores? | **Não** |
-| Vendemos ou compartilhamos dados? | **Nunca** |
+Finanças, notas, compromissos e histórico de conversa ficam no AsyncStorage, separados por perfil local.
+Os ajustes e estados de conexão ficam no SecureStore. Nome, e-mail e sessão demonstrativa ficam no
+AsyncStorage. Finanças, notas, agenda e histórico não têm criptografia de aplicação.
 
-## Onde seus dados ficam
+O login é demonstrativo e não comprova identidade nem valida senha em servidor. Entrar com o mesmo
+e-mail acessa o mesmo perfil. Sair limpa a memória e mantém os registros do perfil no disco; não exclui dados.
 
-Tudo que você cria no Fluxo — contas, transações, orçamentos, metas, notas, compromissos e o
-histórico de conversa com a IA — fica **armazenado exclusivamente no seu aparelho**:
+Registros globais antigos, sem proprietário verificável, permanecem nas chaves locais legadas sem
+importação automática. A migração dos ajustes por perfil remove os antigos campos de chave pessoal
+e permissão de envio a um provedor de IA. O app não usa as credenciais antigas. Isso não revoga
+uma chave no fornecedor nem remove registros legados globais sem proprietário.
 
-- **AsyncStorage** para dados de uso geral (finanças, notas, agenda, chat).
-- **Android Keystore**, via [`expo-secure-store`](https://docs.expo.dev/versions/v57.0.0/sdk/securestore/),
-  para a chave de API da IA.
+Não há backup próprio, exportação ou recuperação implementados. Limpeza de dados, desinstalação,
+backup e restauração dependem também do sistema operacional; não conte com recuperação pelo Fluxo.
 
-Não há conta em servidor nosso, não há sincronização em nuvem e não há backup do nosso lado.
-**Se você desinstalar o app, esses dados são apagados junto e não podem ser recuperados.**
+## Assistente local
 
-## Quando algum dado sai do aparelho
+O assistente consulta registros do perfil e parte do histórico para entender continuações simples.
+Ele pode calcular totais, consultar metas, buscar notas, listar compromissos e abrir abas. Não grava
+alterações por conversa. Abrir o app ou usar consultas reconhecidas não aciona uma API de IA.
 
-Somente em uma situação, e apenas se você optar por ela:
+Não há campo para cadastrar chave de provedor no app. A credencial do responsável é configurada
+somente em `server/.env` no computador de desenvolvimento.
 
-### Recurso de IA (opcional, desligado por padrão)
+## IA gratuita opcional em desenvolvimento
 
-Se — e somente se — você configurar sua própria chave de API em **Ajustes → IA**, o app envia para
-a [API da Anthropic](https://www.anthropic.com/legal/privacy) as informações necessárias para
-responder sua pergunta: sua mensagem, mais um resumo do seu contexto financeiro (saldos, transações
-recentes, orçamentos, metas e títulos de notas).
+A opção só aparece em desenvolvimento com URL local permitida configurada. Após ler a descrição
+em Ajustes e ativar a permissão, perguntas não reconhecidas são enviadas ao backend local, OpenRouter
+e provedor gratuito selecionado. Acompanham a pergunta: até 6 mensagens suas anteriores (até 1.000
+caracteres cada), saldos por moeda, gasto do mês, até 8 orçamentos, 4 metas, títulos de 4 notas e
+títulos/horários de 4 compromissos de hoje.
 
-- Esse envio vai **direto do seu aparelho para a Anthropic**, por HTTPS. Não passa por nenhum
-  servidor nosso — nós não temos servidor.
-- A chave é sua, cadastrada por você, e fica só no seu aparelho.
-- O tratamento desses dados pela Anthropic segue a
-  [política de privacidade](https://www.anthropic.com/legal/privacy) e os
-  [termos comerciais](https://www.anthropic.com/legal/commercial-terms) deles.
-- **Sem chave configurada, o app funciona em modo offline e nada é enviado a lugar nenhum.**
+Corpos de notas, listas de transações e respostas locais anteriores que possam citar notas não são
+encaminhados como contexto. Mensagens digitadas pelo usuário podem conter dados pessoais. O código
+solicita `data_collection: deny`, mas isso não elimina o tratamento de metadados pelo OpenRouter e
+demais envolvidos. Aplicam-se as respectivas políticas: https://openrouter.ai/privacy e
+https://openrouter.ai/docs/guides/privacy/data-collection.
 
-### Google Calendar / Gmail (opcional, ainda não ativo)
+O app comunica-se por HTTP com o backend restrito ao computador local via emulador ou encaminhamento
+USB. O backend usa HTTPS para o OpenRouter. Não há transmissão automática ao abrir o app, ferramentas
+de escrita ou armazenamento de conversas no servidor do Fluxo. Desligar a opção em Ajustes interrompe
+novos envios, mas não apaga dados já transmitidos. Falhas retornam ao modo local.
 
-O app tem o fluxo de OAuth do Google implementado, mas ele só funciona se um Client ID for
-configurado. Quando ativo, o acesso é **somente leitura**, o token fica no aparelho, e os dados de
-agenda são usados apenas para exibir seus compromissos na aba Rotina. Você pode revogar o acesso a
-qualquer momento em [myaccount.google.com/permissions](https://myaccount.google.com/permissions).
+## Google opcional
 
-## O que o app NÃO faz
+Se você escolher calendários já sincronizados no aparelho, o Fluxo pede permissão de calendário e
+salva uma cópia dos eventos selecionados no perfil local. Essa leitura não envia eventos ao Google
+nem altera os calendários. Os eventos podem ser usados pelo assistente local.
 
-- Não coleta identificadores de publicidade, localização, contatos, fotos, câmera ou microfone.
-- Não usa analytics, telemetria ou crash reporting de terceiros.
-- Não exibe anúncios.
-- Não vende, aluga nem compartilha dados com terceiros.
-- Não se conecta a bancos. Os dados financeiros exibidos são **dados de exemplo** embutidos no app.
+O código de OAuth exige Client ID configurado pelo responsável pelo app; atualmente está nulo.
+Se habilitado, a comunicação de autorização e de importação ocorre diretamente com o Google,
+por HTTPS, usando token obtido no login. O código solicita apenas leitura do Calendar. O token fica
+no armazenamento seguro do perfil; não há renovação de token.
+Eventos importados ficam no perfil local e podem ser consultados pelo assistente local.
 
-## Seus direitos (LGPD / GDPR)
+Você pode revogar permissões em https://myaccount.google.com/permissions.
 
-Como não coletamos nem armazenamos seus dados, não temos nada seu para acessar, corrigir ou excluir.
-Você tem controle direto e total:
+## Outros fluxos
 
-- **Excluir tudo:** desinstale o app, ou use "Limpar dados" nas configurações do Android.
-- **Excluir a chave da IA:** Ajustes → IA → apagar o campo → Salvar.
-- **Revogar o Google:** [myaccount.google.com/permissions](https://myaccount.google.com/permissions).
+- Os dados bancários são de exemplo; nenhum banco real está conectado.
+- Não há anúncios, rastreadores, analytics ou crash reporting implementados.
+- O código não solicita microfone, câmera, localização ou identificadores de publicidade.
+- Não há venda ou aluguel de dados implementados.
+- Notas, mensagens e compromissos podem conter informações pessoais digitadas pelo usuário.
 
-## Crianças
+## Controle dos dados
 
-O Fluxo não é direcionado a menores de 13 anos e não coleta dados de ninguém, incluindo crianças.
+Você pode editar ou excluir notas no app. Para excluir todos os dados locais no Android, use
+“Limpar dados” nas configurações do sistema. Não há exclusão completa dentro do app implementada.
+A revogação de um serviço externo deve ser feita no respectivo fornecedor. O Fluxo não mantém cópia
+em backend, nem consegue apagar dados que tenham sido transmitidos a fornecedores em versões anteriores.
 
-## Alterações
+## Alterações e contato
 
-Mudanças nesta política serão publicadas nesta página, com a data de atualização revisada. Alterações
-relevantes serão comunicadas nas notas de versão do app.
+Mudanças de processamento ou integrações serão documentadas nesta política. Esta descrição deve ser
+reavaliada antes de publicação e sempre que serviços externos forem ativados.
 
-## Contato
-
-Dúvidas sobre privacidade: **natanaplications@gmail.com**
-
-Questões de segurança: ver [SECURITY.md](SECURITY.md).
+Privacidade: natanaplications@gmail.com. Segurança: ver SECURITY.md.

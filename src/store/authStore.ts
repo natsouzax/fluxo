@@ -1,49 +1,80 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import { closeProfile, openProfile } from './profileSession';
 
-interface AuthUser {
-  name: string;
-  email: string;
-}
-
+interface AuthUser { name: string; email: string }
 interface AuthState {
   user: AuthUser | null;
   isAuthenticated: boolean;
+  isReady: boolean;
+  initializationError: string | null;
+  initialize: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   signUp: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
-// Pre-saved test account — there's no backend/DB yet, so this is the one
-// account guaranteed to exist. The login screen comes pre-filled with it.
-export const TEST_ACCOUNT = {
-  name: 'Usuário Teste',
-  email: 'teste@fluxo.app',
-  password: 'fluxo123',
-};
+let revision = 0;
+let initialization: Promise<void> | null = null;
 
-// Mock auth: there's no backend yet, so any well-formed email/password
-// combo succeeds locally. Swap this for a real API call when one exists.
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      user: null,
-      isAuthenticated: false,
-      login: async (email) => {
-        await new Promise((r) => setTimeout(r, 500));
-        const name = email.trim().toLowerCase() === TEST_ACCOUNT.email ? TEST_ACCOUNT.name : email.split('@')[0];
-        set({ user: { name, email }, isAuthenticated: true });
-      },
-      signUp: async (name, email) => {
-        await new Promise((r) => setTimeout(r, 500));
-        set({ user: { name, email }, isAuthenticated: true });
-      },
-      logout: () => set({ user: null, isAuthenticated: false }),
-    }),
-    {
-      name: 'fluxo-auth',
-      storage: createJSONStorage(() => AsyncStorage),
+// Local demonstration profiles, not server authentication. Email is not a security boundary.
+export const useAuthStore = create<AuthState>()(persist((set, get) => {
+  async function enter(user: AuthUser) {
+    const attempt = ++revision;
+    // Keep the login form mounted so hydration errors can be shown by its caller.
+    set({ isAuthenticated: false, initializationError: null });
+    try {
+      await openProfile(user.email);
+      if (attempt !== revision) return;
+      set({ user, isAuthenticated: true, isReady: true });
+    } catch (error) {
+      if (attempt !== revision) return;
+      closeProfile();
+      set({ user: null, isAuthenticated: false, isReady: true });
+      throw error;
     }
-  )
-);
+  }
+  return {
+    user: null, isAuthenticated: false, isReady: false, initializationError: null,
+    initialize: () => {
+      if (get().isReady) return Promise.resolve();
+      if (initialization) return initialization;
+      initialization = (async () => {
+        await useAuthStore.persist.rehydrate();
+        const { user, isAuthenticated } = get();
+        if (!useAuthStore.persist.hasHydrated()) throw new Error('Não foi possível carregar a sessão.');
+        if (user && isAuthenticated) await enter({ ...user, email: user.email.trim().toLowerCase() });
+        else set({ isReady: true });
+      })().catch(() => {
+        closeProfile();
+        set({ user: null, isAuthenticated: false, isReady: true,
+          initializationError: 'Não foi possível carregar a sessão. Entre novamente.' });
+      }).finally(() => { initialization = null; });
+      return initialization;
+    },
+    login: async (email, password) => {
+      const normalized = email.trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized) || password.length < 6) {
+        throw new Error('Confira o e-mail e a senha (mínimo de 6 caracteres).');
+      }
+      await enter({ name: normalized.split('@')[0], email: normalized });
+    },
+    signUp: async (name, email, password) => {
+      if (!name.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) || password.length < 6) {
+        throw new Error('Confira nome, e-mail e senha.');
+      }
+      await enter({ name: name.trim(), email: email.trim().toLowerCase() });
+    },
+    logout: () => {
+      ++revision;
+      closeProfile();
+      set({ user: null, isAuthenticated: false, isReady: true });
+    },
+  };
+}, {
+  name: 'fluxo-auth',
+  storage: createJSONStorage(() => AsyncStorage),
+  skipHydration: true,
+  partialize: ({ user, isAuthenticated }) => ({ user, isAuthenticated }),
+}));

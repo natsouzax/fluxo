@@ -1,7 +1,7 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { Note } from '../data/types';
+import { profileStorage } from './profileStorage';
 
 interface NotesState {
   notes: Note[];
@@ -9,30 +9,10 @@ interface NotesState {
   deleteNote: (id: string) => void;
 }
 
-const seedNotes: Note[] = [
-  {
-    id: 'n1',
-    title: 'Metas do mês',
-    body: 'Reduzir gastos com iFood para no máximo R$ 400.\nSeparar R$ 500 para a reserva de emergência.',
-    tags: ['financas', 'metas'],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'n2',
-    title: 'Ideias para a viagem ao Chile',
-    body: 'Pesquisar passagens em janeiro.\nVer se dá pra usar milhas do cartão Nubank.',
-    tags: ['viagem'],
-    linkedGoalId: 'g2',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
-
 export const useNotesStore = create<NotesState>()(
   persist(
     (set) => ({
-      notes: seedNotes,
+      notes: [],
       upsertNote: (note) =>
         set((state) => {
           const exists = state.notes.some((n) => n.id === note.id);
@@ -46,7 +26,14 @@ export const useNotesStore = create<NotesState>()(
     }),
     {
       name: 'fluxo-notes',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => profileStorage),
+      skipHydration: true,
+      version: 1,
+      migrate: (persisted) => ({
+        notes: ((persisted as { notes?: Note[] } | undefined)?.notes ?? [])
+          .filter((note) => !['n1', 'n2'].includes(note.id)),
+      }),
+      partialize: ({ notes }) => ({ notes }),
     }
   )
 );

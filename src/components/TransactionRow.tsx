@@ -2,7 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Transaction } from '../data/types';
-import { colors, spacing, typography } from '../theme';
+import { radius, spacing, typography, useThemeStyles, type AppColors } from '../theme';
 import { formatCurrency } from '../utils/format';
 
 const categoryIcon: Record<string, React.ComponentProps<typeof Feather>['name']> = {
@@ -16,41 +16,48 @@ const categoryIcon: Record<string, React.ComponentProps<typeof Feather>['name']>
   'Salário': 'briefcase',
 };
 
-export function TransactionRow({ transaction }: { transaction: Transaction }) {
+export function TransactionRow({ transaction, compact = false }: { transaction: Transaction; compact?: boolean }) {
+  const { colors, styles } = useThemeStyles(createStyles);
   const isIn = transaction.direction === 'in';
+  const isTransfer = transaction.direction === 'transfer';
+  // Date-only records are calendar dates; parsing them as UTC can move them to yesterday.
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(transaction.date)
+    ? new Date(`${transaction.date}T12:00:00`) : new Date(transaction.date);
   return (
-    <View style={styles.row}>
-      <View style={styles.iconWrap}>
+    <View style={[styles.row, compact && styles.compactRow]}>
+      <View style={[styles.iconWrap, compact && styles.compactIcon]}>
         <Feather name={categoryIcon[transaction.category] ?? 'circle'} size={16} color={colors.textSecondary} />
       </View>
       <View style={styles.info}>
         <Text style={styles.description} numberOfLines={1}>
           {transaction.description}
         </Text>
-        <Text style={styles.category}>{transaction.category}</Text>
+        <Text style={styles.category}>{isTransfer ? 'Transferência entre contas' : transaction.category} · {date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</Text>
       </View>
-      <Text style={[styles.amount, isIn ? styles.amountIn : styles.amountOut]}>
-        {isIn ? '+' : '-'} {formatCurrency(transaction.amount)}
+      <Text style={[styles.amount, isTransfer ? styles.amountTransfer : isIn ? styles.amountIn : styles.amountOut]}>
+        {isTransfer ? '↔' : isIn ? '+' : '-'} {formatCurrency(transaction.amount)}
       </Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.sm },
+const createStyles = (colors: AppColors) => StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.sm, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border },
+  compactRow: { paddingVertical: spacing.md },
   iconWrap: {
     width: 36,
     height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.cardAlt,
+    borderRadius: radius.md,
+    backgroundColor: colors.financeSurface,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
   },
-  info: { flex: 1 },
+  compactIcon: { width: 36, height: 36, borderRadius: 12 },
+  info: { flex: 1, minWidth: 100 },
   description: { ...typography.bodyStrong, color: colors.textPrimary },
   category: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
-  amount: { ...typography.bodyStrong },
+  amount: { ...typography.bodyStrong, fontVariant: ['tabular-nums'] },
   amountIn: { color: colors.wise },
   amountOut: { color: colors.textPrimary },
+  amountTransfer: { color: colors.textSecondary },
 });

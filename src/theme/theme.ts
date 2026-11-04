@@ -19,13 +19,14 @@ export const radius = {
 };
 
 export const typography = {
-  display: { fontSize: 40, fontWeight: '600' as const, letterSpacing: -0.8 },
-  h1: { fontSize: 24, fontWeight: '700' as const, letterSpacing: -0.3 },
-  h2: { fontSize: 18, fontWeight: '600' as const },
-  body: { fontSize: 15, fontWeight: '400' as const },
-  bodyStrong: { fontSize: 15, fontWeight: '600' as const },
-  caption: { fontSize: 13, fontWeight: '400' as const },
-  tiny: { fontSize: 11, fontWeight: '500' as const },
+  editorial: { fontFamily: 'Manrope-SemiBold', fontSize: 32, lineHeight: 38, letterSpacing: -1.1 },
+  display: { fontFamily: 'Manrope-SemiBold', fontSize: 40, lineHeight: 48, letterSpacing: -0.8 },
+  h1: { fontFamily: 'Manrope-Bold', fontSize: 24, lineHeight: 30, letterSpacing: -0.3 },
+  h2: { fontFamily: 'Manrope-SemiBold', fontSize: 18, lineHeight: 24 },
+  body: { fontFamily: 'Manrope-Regular', fontSize: 15, lineHeight: 22 },
+  bodyStrong: { fontFamily: 'Manrope-SemiBold', fontSize: 15, lineHeight: 22 },
+  caption: { fontFamily: 'Manrope-Regular', fontSize: 13, lineHeight: 18 },
+  tiny: { fontFamily: 'Manrope-Medium', fontSize: 11, lineHeight: 16 },
 };
 
 export const theme = { colors, spacing, radius, typography };
